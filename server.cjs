@@ -4,10 +4,32 @@ const multer = require('multer');
 const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const OpenAI = require('openai');
+const winston = require('winston');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
+});
+
+// Setup logger
+const logDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(({ timestamp, level, message }) => {
+      return `${timestamp} [${level}]: ${message}`;
+    })
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: path.join(logDir, 'app.log') })
+  ]
 });
 
 const app = express();
@@ -16,6 +38,10 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  logger.http(`${req.method} ${req.url}`);
+  next();
+});
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -50,7 +76,7 @@ function calculatePerimeter(points) {
 app.use(express.static(path.join(__dirname)));
 
 // OCR Endpoint
-app.post('/upload-measurements', upload.single('image'), async (req, res) => {
+app.post('/upload-measurements', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Please upload an image.' });
@@ -58,9 +84,9 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
     const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
       tessedit_char_whitelist: '0123456789.',
-      logger: info => console.log(info)
+      logger: info => logger.debug(info)
     });
-    console.log('OCR Output:', text);
+    logger.debug(`OCR Output: ${text}`);
 
     const numberPattern = /\d+(\.\d+)?/g;
     const matches = text.match(numberPattern);
@@ -93,13 +119,13 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       fasciaBoardLength: fasciaBoardLength.toFixed(2)
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error processing image.' });
+    err.userMessage = 'Error processing image.';
+    next(err);
   }
 });
 
 // Chatbot Endpoint
-app.post('/chatbot', async (req, res) => {
+app.post('/chatbot', async (req, res, next) => {
   const { message } = req.body;
   const calculationGuide = `
 Here’s a detailed guide for calculating square footage and other shapes:
@@ -124,8 +150,8 @@ Always form follow-up questions if needed to clarify user data.` },
     });
     res.json({ response: completion.choices[0].message.content });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error communicating with OpenAI.' });
+    err.userMessage = 'Error communicating with OpenAI.';
+    next(err);
   }
 });
 
@@ -133,6 +159,12 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Centralized error handler
+app.use((err, req, res, next) => {
+  logger.error(err.stack);
+  res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
+});
+
 app.listen(port, () => {
-  console.log(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
 });
