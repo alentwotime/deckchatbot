@@ -9,6 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "better-sqlite3": "^11.10.0",
     "cheerio": "^1.1.0",
     "compromise": "^14.14.4",
     "cors": "^2.8.5",
