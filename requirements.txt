@@ -1,2 +1,10 @@
 flash 
-openai 
+openai
+express
+multer
+tesseract.js
+cors
+dotenv
+openai
+python-dotenv
+ 
