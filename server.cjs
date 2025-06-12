@@ -194,6 +194,19 @@ Here’s a detailed guide for calculating square footage and other shapes:
 8. Fascia Board: total perimeter length (excluding steps).
 `;
   try {
+    const shape = shapeFromMessage(message);
+    if (shape) {
+      const { type, dimensions } = shape;
+      let area = 0;
+      if (type === 'rectangle') {
+        area = rectangleArea(dimensions.length, dimensions.width);
+      } else if (type === 'circle') {
+        area = circleArea(dimensions.radius);
+      } else if (type === 'triangle') {
+        area = triangleArea(dimensions.base, dimensions.height);
+      }
+      return res.json({ response: `The ${type} area is ${area.toFixed(2)}.` });
+    }
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
