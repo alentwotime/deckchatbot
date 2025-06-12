@@ -7,6 +7,8 @@ AI-powered chatbot for deck sales and quoting automation.
 npm install
 ```
 
+Copy `.env.example` to `.env` and set your `OPENAI_API_KEY` before running the server.
+
 ## Running
 
 ```bash
