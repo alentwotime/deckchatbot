@@ -24,6 +24,30 @@ function rectangleArea(length, width) {
   return length * width;
 }
 
+function circleArea(radius) {
+  return Math.PI * Math.pow(radius, 2);
+}
+
+function triangleArea(base, height) {
+  return (base * height) / 2;
+}
+
+function shapeFromMessage(message) {
+  const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (rectMatch) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
+  }
+  const circleMatch = /circle\s*radius\s*(\d+(?:\.\d+)?)/i.exec(message);
+  if (circleMatch) {
+    return { type: 'circle', dimensions: { radius: parseFloat(circleMatch[1]) } };
+  }
+  const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (triMatch) {
+    return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+  }
+  return null;
+}
+
 function polygonArea(points) {
   let area = 0;
   const n = points.length;
@@ -48,6 +72,44 @@ function calculatePerimeter(points) {
 }
 
 app.use(express.static(path.join(__dirname)));
+
+app.post('/calculate-multi-shape', (req, res) => {
+  const { shapes, wastagePercent = 0 } = req.body;
+  if (!shapes || !Array.isArray(shapes) || shapes.length === 0) {
+    return res.status(400).json({ error: 'Please provide an array of shapes.' });
+  }
+  let totalArea = 0;
+  let poolArea = 0;
+  shapes.forEach(shape => {
+    const { type, dimensions, isPool } = shape;
+    let area = 0;
+    if (type === 'rectangle') {
+      area = rectangleArea(dimensions.length, dimensions.width);
+    } else if (type === 'circle') {
+      area = circleArea(dimensions.radius);
+    } else if (type === 'triangle') {
+      area = triangleArea(dimensions.base, dimensions.height);
+    } else if (type === 'polygon') {
+      area = polygonArea(dimensions.points);
+    } else {
+      return res.status(400).json({ error: `Unsupported shape type: ${type}` });
+    }
+    if (isPool) {
+      poolArea += area;
+    } else {
+      totalArea += area;
+    }
+  });
+  const deckArea = totalArea - poolArea;
+  const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
+  res.json({
+    totalShapeArea: totalArea.toFixed(2),
+    poolArea: poolArea.toFixed(2),
+    usableDeckArea: deckArea.toFixed(2),
+    adjustedDeckArea: adjustedDeckArea.toFixed(2),
+    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
+  });
+});
 
 // OCR Endpoint
 app.post('/upload-measurements', upload.single('image'), async (req, res) => {
@@ -133,6 +195,17 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  });
+}
+
+module.exports = {
+  app,
+  rectangleArea,
+  circleArea,
+  triangleArea,
+  polygonArea,
+  shapeFromMessage,
+};
