@@ -21,6 +21,12 @@
   <br><br>
   <input type="file" id="imageInput" accept="image/*">
   <button id="uploadBtn" onclick="uploadImage()">Upload Image</button>
+  <br><br>
+  <input type="file" id="drawingInput" accept="image/*">
+  <button id="drawingBtn" onclick="uploadDrawing()">Upload Drawing</button>
+  <br>
+  <h3>Digitalized Drawing</h3>
+  <img id="digitalImage" alt="Digitalized drawing" style="max-width:100%; display:block; margin-top:10px;" />
 </div>
 
 <script>
@@ -79,6 +85,34 @@
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     fileInput.value = "";
+  }
+
+  async function uploadDrawing() {
+    const drawInput = document.getElementById("drawingInput");
+    const file = drawInput.files[0];
+    if (!file) {
+      alert("Please select a drawing to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch("/digitalize-drawing", {
+      method: "POST",
+      body: formData
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      document.getElementById("digitalImage").src = url;
+    } else {
+      const data = await response.json();
+      alert(data.error || "Error processing drawing.");
+    }
+
+    drawInput.value = "";
   }
 </script>
 

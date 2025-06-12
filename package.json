@@ -23,6 +23,7 @@
     "node-nlp": "^5.0.0-alpha.5",
     "node-record-lpcm16": "^1.0.1",
     "openai": "^5.2.0",
+    "potrace": "^2.1.8",
     "sentiment": "^5.0.2",
     "sharp": "^0.34.2",
     "socket.io": "^4.8.1",

@@ -5,6 +5,10 @@ const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
+const { Jimp } = require('jimp');
+const potrace = require('potrace');
+const fs = require('fs');
+const os = require('os');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -191,6 +195,42 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error processing image.' });
+  }
+});
+
+// Digitalize drawing endpoint
+app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload an image.' });
+    }
+    const img = await Jimp.read(req.file.buffer);
+    img
+      .greyscale()
+      .contrast(1)
+      .normalize()
+      .threshold({ max: 200 });
+
+    const buffer = await new Promise((resolve, reject) => {
+      img.getBuffer('image/png', (err, buf) => {
+        if (err) return reject(err);
+        resolve(buf);
+      });
+    });
+    const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
+    await fs.promises.writeFile(tmpPath, buffer);
+    potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, svg) => {
+      fs.unlink(tmpPath, () => {});
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error digitalizing drawing.' });
+      }
+      res.set('Content-Type', 'image/svg+xml');
+      res.send(svg);
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error processing drawing.' });
   }
 });
 
