@@ -71,16 +71,31 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
-// Extract numbers from OCR text while removing inch/foot markers and
-// filtering out obviously invalid values such as canvas dimensions.
+// Extract measurement numbers from OCR text.
+// Prefer values that include explicit units (ft/in or quote symbols)
+// to avoid accidentally using canvas dimensions.
 function extractNumbers(rawText) {
   if (!rawText) return [];
-  const cleaned = rawText.replace(/["'″’]/g, '');
-  const numberPattern = /\d+(?:\.\d+)?/g;
-  const matches = cleaned.match(numberPattern);
-  if (!matches) return [];
-  // Filter out numbers that are implausibly large for deck measurements.
-  return matches.map(Number).filter(n => n <= 500);
+
+  const results = [];
+  const unitPattern = /(\d+(?:\.\d+)?)(?:\s*(?:ft|feet|foot|in|inch|inches)|\s*["'″’])/gi;
+  let match;
+  while ((match = unitPattern.exec(rawText)) !== null) {
+    results.push(parseFloat(match[1]));
+  }
+
+  // Fallback to any numbers if none with units were found.
+  if (results.length === 0) {
+    const cleaned = rawText.replace(/["'″’]/g, '');
+    const fallbackMatches = cleaned.match(/\d+(?:\.\d+)?/g);
+    if (fallbackMatches) {
+      results.push(...fallbackMatches.map(Number));
+    }
+  }
+
+  // Remove obviously incorrect values (>500 ft) which may come from
+  // misread canvas bounds or inch symbols interpreted as digits.
+  return results.filter(n => n <= 500);
 }
 
 app.use(express.static(path.join(__dirname)));
@@ -227,4 +242,5 @@ module.exports = {
   triangleArea,
   polygonArea,
   shapeFromMessage,
+  extractNumbers,
 };
