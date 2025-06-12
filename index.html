@@ -71,12 +71,15 @@
     if (data.error) {
       messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> Error: ${data.error}</div>`;
     } else {
-      let result = `<div><strong>Chatbot:</strong> Outer Deck Area: ${data.outerDeckArea} sq ft<br>
-        Pool Area: ${data.poolArea} sq ft<br>
-        Usable Deck Area: ${data.usableDeckArea} sq ft<br>
+      let result = `<div><strong>Chatbot:</strong> Outer Area: ${data.outerDeckArea} sq ft<br>
+        Inner Cutout Area: ${data.poolArea} sq ft<br>
+        Final Usable Deck Area: ${data.usableDeckArea} sq ft<br>
         Railing Footage: ${data.railingFootage} ft`;
       if (data.warning) {
         result += `<br><em>${data.warning}</em>`;
+      }
+      if (data.explanation) {
+        result += `<br>${data.explanation}`;
       }
       result += `</div>`;
       messagesDiv.innerHTML += result;

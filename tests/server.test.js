@@ -45,7 +45,8 @@ describe('server endpoints', () => {
       poolArea: '78.54',
       usableDeckArea: '121.46',
       adjustedDeckArea: '133.61',
-      note: 'Adjusted for 10% wastage.'
+      note: 'Adjusted for 10% wastage.',
+      explanation: expect.stringContaining('usable surface')
     });
   });
 
