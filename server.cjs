@@ -5,6 +5,7 @@ const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
+const Jimp = require('jimp');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -191,6 +192,27 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error processing image.' });
+  }
+});
+
+// Digitalize drawing endpoint
+app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload an image.' });
+    }
+    const img = await Jimp.read(req.file.buffer);
+    img
+      .greyscale()
+      .contrast(1)
+      .threshold({ max: 128 });
+
+    const buffer = await img.getBufferAsync(Jimp.MIME_PNG);
+    res.set('Content-Type', 'image/png');
+    res.send(buffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error processing drawing.' });
   }
 });
 

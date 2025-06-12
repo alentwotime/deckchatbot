@@ -42,6 +42,12 @@ describe('server endpoints', () => {
     expect(res.body.error).toMatch(/Please upload an image/);
   });
 
+  test('/digitalize-drawing requires file', async () => {
+    const res = await request(app).post('/digitalize-drawing');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Please upload an image/);
+  });
+
   test('/chatbot', async () => {
     const res = await request(app).post('/chatbot').send({ message: 'hello' });
     expect(res.status).toBe(200);
