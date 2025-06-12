@@ -1,14 +1,17 @@
 const request = require('supertest');
 
 jest.mock('openai', () => {
-  return jest.fn().mockImplementation(() => ({
+  const createMock = jest.fn().mockResolvedValue({ choices: [{ message: { content: 'mocked' } }] });
+  const MockOpenAI = jest.fn().mockImplementation(() => ({
     chat: {
-      completions: {
-        create: jest.fn().mockResolvedValue({ choices: [{ message: { content: 'mocked' } }] })
-      }
+      completions: { create: createMock }
     }
   }));
+  MockOpenAI.__createMock = createMock;
+  return MockOpenAI;
 });
+const OpenAI = require('openai');
+const createMock = OpenAI.__createMock;
 
 const { app } = require('../server.cjs');
 
@@ -43,5 +46,13 @@ describe('server endpoints', () => {
     const res = await request(app).post('/chatbot').send({ message: 'hello' });
     expect(res.status).toBe(200);
     expect(res.body.response).toBe('mocked');
+  });
+
+  test('/chatbot handles rectangle', async () => {
+    createMock.mockClear();
+    const res = await request(app).post('/chatbot').send({ message: 'rectangle 5x10' });
+    expect(res.status).toBe(200);
+    expect(res.body.response).toBe('The rectangle area is 50.00.');
+    expect(createMock).not.toHaveBeenCalled();
   });
 });
