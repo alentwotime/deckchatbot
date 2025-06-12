@@ -47,6 +47,18 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
+// Extract numbers from OCR text while removing inch/foot markers and
+// filtering out obviously invalid values such as canvas dimensions.
+function extractNumbers(rawText) {
+  if (!rawText) return [];
+  const cleaned = rawText.replace(/["'″’]/g, '');
+  const numberPattern = /\d+(?:\.\d+)?/g;
+  const matches = cleaned.match(numberPattern);
+  if (!matches) return [];
+  // Filter out numbers that are implausibly large for deck measurements.
+  return matches.map(Number).filter(n => n <= 500);
+}
+
 app.use(express.static(path.join(__dirname)));
 
 // OCR Endpoint
@@ -62,35 +74,42 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
     });
     console.log('OCR Output:', text);
 
-    const numberPattern = /\d+(\.\d+)?/g;
-    const matches = text.match(numberPattern);
-    if (!matches || matches.length < 6) {
+    const numbers = extractNumbers(text);
+    if (numbers.length < 6) {
       return res.status(400).json({
         error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
       });
     }
-    const totalNumbers = matches.map(Number);
-    const midpoint = totalNumbers.length / 2;
+
+    const hasPool = /pool/i.test(text);
+    const midpoint = hasPool ? numbers.length / 2 : numbers.length;
     const outerPoints = [];
     for (let i = 0; i < midpoint; i += 2) {
-      outerPoints.push({ x: totalNumbers[i], y: totalNumbers[i + 1] });
+      outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
     }
     const poolPoints = [];
-    for (let i = midpoint; i < totalNumbers.length; i += 2) {
-      poolPoints.push({ x: totalNumbers[i], y: totalNumbers[i + 1] });
+    if (hasPool) {
+      for (let i = midpoint; i < numbers.length; i += 2) {
+        poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+      }
     }
     const outerArea = polygonArea(outerPoints);
-    const poolArea = polygonArea(poolPoints);
+    const poolArea = hasPool ? polygonArea(poolPoints) : 0;
     const deckArea = outerArea - poolArea;
     const railingFootage = calculatePerimeter(outerPoints);
     const fasciaBoardLength = railingFootage;
+
+    const warning = deckArea > 1000
+      ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
+      : null;
 
     res.json({
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
       usableDeckArea: deckArea.toFixed(2),
       railingFootage: railingFootage.toFixed(2),
-      fasciaBoardLength: fasciaBoardLength.toFixed(2)
+      fasciaBoardLength: fasciaBoardLength.toFixed(2),
+      warning
     });
   } catch (err) {
     console.error(err);
