@@ -1,4 +1,8 @@
 require('dotenv').config();
+
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
+}
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');

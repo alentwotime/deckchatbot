@@ -38,7 +38,10 @@
     });
 
     const data = await response.json();
-    const botMessage = data.response;
+    let botMessage = data.response;
+    if (!botMessage) {
+      botMessage = `Error: ${data.error || 'Unable to get response.'}`;
+    }
 
     messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> ${botMessage}</div>`;
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
