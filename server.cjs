@@ -5,6 +5,7 @@ const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
+const { addMessage, addMeasurement, getRecentMessages } = require('./memory');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -180,14 +181,18 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
       : null;
 
-    res.json({
+    const result = {
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
       usableDeckArea: deckArea.toFixed(2),
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
-      warning
-    });
+      warning,
+      ocrText: text,
+      rawNumbers: numbers
+    };
+    addMeasurement(result);
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error processing image.' });
@@ -209,6 +214,7 @@ Here’s a detailed guide for calculating square footage and other shapes:
 8. Fascia Board: total perimeter length (excluding steps).
 `;
   try {
+    addMessage('user', message);
     const shape = shapeFromMessage(message);
     if (shape) {
       const { type, dimensions } = shape;
@@ -220,18 +226,24 @@ Here’s a detailed guide for calculating square footage and other shapes:
       } else if (type === 'triangle') {
         area = triangleArea(dimensions.base, dimensions.height);
       }
-      return res.json({ response: `The ${type} area is ${area.toFixed(2)}.` });
+      const reply = `The ${type} area is ${area.toFixed(2)}.`;
+      addMessage('assistant', reply);
+      return res.json({ response: reply });
     }
+    const history = getRecentMessages();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: `You are a smart math bot using this calculation guide:
 ${calculationGuide}
 Always form follow-up questions if needed to clarify user data.` },
+        ...history.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: message }
       ]
     });
-    res.json({ response: completion.choices[0].message.content });
+    const botReply = completion.choices[0].message.content;
+    addMessage('assistant', botReply);
+    res.json({ response: botReply });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error communicating with OpenAI.' });
