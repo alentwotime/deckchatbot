@@ -25,6 +25,30 @@ function rectangleArea(length, width) {
   return length * width;
 }
 
+function circleArea(radius) {
+  return Math.PI * Math.pow(radius, 2);
+}
+
+function triangleArea(base, height) {
+  return (base * height) / 2;
+}
+
+function shapeFromMessage(message) {
+  const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (rectMatch) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
+  }
+  const circleMatch = /circle\s*radius\s*(\d+(?:\.\d+)?)/i.exec(message);
+  if (circleMatch) {
+    return { type: 'circle', dimensions: { radius: parseFloat(circleMatch[1]) } };
+  }
+  const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (triMatch) {
+    return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+  }
+  return null;
+}
+
 function polygonArea(points) {
   let area = 0;
   const n = points.length;
@@ -48,6 +72,18 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
+// Extract numbers from OCR text while removing inch/foot markers and
+// filtering out obviously invalid values such as canvas dimensions.
+function extractNumbers(rawText) {
+  if (!rawText) return [];
+  const cleaned = rawText.replace(/["'″’]/g, '');
+  const numberPattern = /\d+(?:\.\d+)?/g;
+  const matches = cleaned.match(numberPattern);
+  if (!matches) return [];
+  // Filter out numbers that are implausibly large for deck measurements.
+  return matches.map(Number).filter(n => n <= 500);
+}
+
 app.use(express.static(path.join(__dirname)));
 
 // Calculate multiple shapes
@@ -67,33 +103,28 @@ app.post(
     const { shapes, wastagePercent = 0 } = req.body;
     let totalArea = 0;
     let poolArea = 0;
-
-    shapes.forEach((shape) => {
+    shapes.forEach(shape => {
       const { type, dimensions, isPool } = shape;
       let area = 0;
-
       if (type === 'rectangle') {
         area = rectangleArea(dimensions.length, dimensions.width);
+      } else if (type === 'circle') {
+        area = circleArea(dimensions.radius);
+      } else if (type === 'triangle') {
+        area = triangleArea(dimensions.base, dimensions.height);
       } else if (type === 'polygon') {
         area = polygonArea(dimensions.points);
-      } else if (type === 'triangle') {
-        area = (dimensions.base * dimensions.height) / 2;
-      } else if (type === 'circle') {
-        area = Math.PI * Math.pow(dimensions.radius, 2);
       } else {
         return res.status(400).json({ error: `Unsupported shape type: ${type}` });
       }
-
       if (isPool) {
         poolArea += area;
       } else {
         totalArea += area;
       }
     });
-
     const deckArea = totalArea - poolArea;
     const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
-
     res.json({
       totalShapeArea: totalArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
@@ -127,43 +158,51 @@ app.post(
         tessedit_char_whitelist: '0123456789.',
         logger: info => console.log(info)
       });
-    console.log('OCR Output:', text);
+      console.log('OCR Output:', text);
 
-    const numberPattern = /\d+(\.\d+)?/g;
-    const matches = text.match(numberPattern);
-    if (!matches || matches.length < 6) {
-      return res.status(400).json({
-        error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
+      const numbers = extractNumbers(text);
+      if (numbers.length < 6) {
+        return res.status(400).json({
+          error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
+        });
+      }
+
+      const hasPool = /pool/i.test(text);
+      const midpoint = hasPool ? numbers.length / 2 : numbers.length;
+      const outerPoints = [];
+      for (let i = 0; i < midpoint; i += 2) {
+        outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
+      }
+      const poolPoints = [];
+      if (hasPool) {
+        for (let i = midpoint; i < numbers.length; i += 2) {
+          poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+        }
+      }
+      const outerArea = polygonArea(outerPoints);
+      const poolArea = hasPool ? polygonArea(poolPoints) : 0;
+      const deckArea = outerArea - poolArea;
+      const railingFootage = calculatePerimeter(outerPoints);
+      const fasciaBoardLength = railingFootage;
+
+      const warning = deckArea > 1000
+        ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
+        : null;
+
+      res.json({
+        outerDeckArea: outerArea.toFixed(2),
+        poolArea: poolArea.toFixed(2),
+        usableDeckArea: deckArea.toFixed(2),
+        railingFootage: railingFootage.toFixed(2),
+        fasciaBoardLength: fasciaBoardLength.toFixed(2),
+        warning
       });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error processing image.' });
     }
-    const totalNumbers = matches.map(Number);
-    const midpoint = totalNumbers.length / 2;
-    const outerPoints = [];
-    for (let i = 0; i < midpoint; i += 2) {
-      outerPoints.push({ x: totalNumbers[i], y: totalNumbers[i + 1] });
-    }
-    const poolPoints = [];
-    for (let i = midpoint; i < totalNumbers.length; i += 2) {
-      poolPoints.push({ x: totalNumbers[i], y: totalNumbers[i + 1] });
-    }
-    const outerArea = polygonArea(outerPoints);
-    const poolArea = polygonArea(poolPoints);
-    const deckArea = outerArea - poolArea;
-    const railingFootage = calculatePerimeter(outerPoints);
-    const fasciaBoardLength = railingFootage;
-
-    res.json({
-      outerDeckArea: outerArea.toFixed(2),
-      poolArea: poolArea.toFixed(2),
-      usableDeckArea: deckArea.toFixed(2),
-      railingFootage: railingFootage.toFixed(2),
-      fasciaBoardLength: fasciaBoardLength.toFixed(2)
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error processing image.' });
   }
-});
+);
 
 // Chatbot Endpoint
 app.post(
@@ -175,7 +214,7 @@ app.post(
       return res.status(400).json({ errors: errors.array() });
     }
     const { message } = req.body;
-  const calculationGuide = `
+    const calculationGuide = `
 Here’s a detailed guide for calculating square footage and other shapes:
 1. Rectangle: L × W
 2. Triangle: (1/2) × Base × Height
@@ -186,27 +225,39 @@ Here’s a detailed guide for calculating square footage and other shapes:
 7. Complex Shapes: sum of all simpler shapes’ areas.
 8. Fascia Board: total perimeter length (excluding steps).
 `;
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: `You are a smart math bot using this calculation guide:
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: `You are a smart math bot using this calculation guide:
 ${calculationGuide}
 Always form follow-up questions if needed to clarify user data.` },
-        { role: 'user', content: message }
-      ]
-    });
-    res.json({ response: completion.choices[0].message.content });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error communicating with OpenAI.' });
+          { role: 'user', content: message }
+        ]
+      });
+      res.json({ response: completion.choices[0].message.content });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error communicating with OpenAI.' });
+    }
   }
-});
+);
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  });
+}
+
+module.exports = {
+  app,
+  rectangleArea,
+  circleArea,
+  triangleArea,
+  polygonArea,
+  shapeFromMessage,
+};

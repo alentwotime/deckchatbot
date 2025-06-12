@@ -45,3 +45,14 @@ curl -X POST http://localhost:3000/chatbot \
   -H "Content-Type: application/json" \
   -d '{"message":"How do I calculate deck area?"}'
 ```
+
+## Running Tests
+
+Install dependencies and run the test suite with:
+
+```bash
+npm install
+npm test
+```
+
+The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.

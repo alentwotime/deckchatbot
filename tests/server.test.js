@@ -1,0 +1,47 @@
+const request = require('supertest');
+
+jest.mock('openai', () => {
+  return jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: jest.fn().mockResolvedValue({ choices: [{ message: { content: 'mocked' } }] })
+      }
+    }
+  }));
+});
+
+const { app } = require('../server.cjs');
+
+describe('server endpoints', () => {
+  test('/calculate-multi-shape', async () => {
+    const res = await request(app)
+      .post('/calculate-multi-shape')
+      .send({
+        shapes: [
+          { type: 'rectangle', dimensions: { length: 10, width: 20 } },
+          { type: 'circle', dimensions: { radius: 5 }, isPool: true }
+        ],
+        wastagePercent: 10
+      });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      totalShapeArea: '200.00',
+      poolArea: '78.54',
+      usableDeckArea: '121.46',
+      adjustedDeckArea: '133.61',
+      note: 'Adjusted for 10% wastage.'
+    });
+  });
+
+  test('/upload-measurements requires file', async () => {
+    const res = await request(app).post('/upload-measurements');
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0].msg).toMatch(/Image file is required/);
+  });
+
+  test('/chatbot', async () => {
+    const res = await request(app).post('/chatbot').send({ message: 'hello' });
+    expect(res.status).toBe(200);
+    expect(res.body.response).toBe('mocked');
+  });
+});
