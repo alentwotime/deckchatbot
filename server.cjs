@@ -129,12 +129,23 @@ app.post('/calculate-multi-shape', (req, res) => {
   });
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
+  const hasCutout = shapes.some(s => s.isPool);
+  let explanation =
+    'When we calculate square footage, we only include the usable surface area of the deck.';
+  if (shapes.length === 1 && !hasCutout) {
+    explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
+  } else if (hasCutout) {
+    explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+  } else {
+    explanation += " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+  }
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
     usableDeckArea: deckArea.toFixed(2),
     adjustedDeckArea: adjustedDeckArea.toFixed(2),
-    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
+    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.',
+    explanation
   });
 });
 
@@ -186,7 +197,10 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       usableDeckArea: deckArea.toFixed(2),
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
-      warning
+      warning,
+      explanation: hasPool
+        ? 'When we calculate square footage, we only include the usable surface area of the deck. This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.'
+        : 'When we calculate square footage, we only include the usable surface area of the deck. This is a simple deck with no cutouts. The entire area is considered usable.'
     });
   } catch (err) {
     console.error(err);
