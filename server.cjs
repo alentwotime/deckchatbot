@@ -4,6 +4,7 @@ const multer = require('multer');
 const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
+const { body, validationResult } = require('express-validator');
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
@@ -49,17 +50,83 @@ function calculatePerimeter(points) {
 
 app.use(express.static(path.join(__dirname)));
 
-// OCR Endpoint
-app.post('/upload-measurements', upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Please upload an image.' });
+// Calculate multiple shapes
+app.post(
+  '/calculate-multi-shape',
+  [
+    body('shapes').isArray({ min: 1 }).withMessage('shapes must be a non-empty array'),
+    body('shapes.*.type').isString().withMessage('shape type required'),
+    body('wastagePercent').optional().isNumeric().withMessage('wastagePercent must be numeric')
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
-      tessedit_pageseg_mode: 6,
-      tessedit_char_whitelist: '0123456789.',
-      logger: info => console.log(info)
+
+    const { shapes, wastagePercent = 0 } = req.body;
+    let totalArea = 0;
+    let poolArea = 0;
+
+    shapes.forEach((shape) => {
+      const { type, dimensions, isPool } = shape;
+      let area = 0;
+
+      if (type === 'rectangle') {
+        area = rectangleArea(dimensions.length, dimensions.width);
+      } else if (type === 'polygon') {
+        area = polygonArea(dimensions.points);
+      } else if (type === 'triangle') {
+        area = (dimensions.base * dimensions.height) / 2;
+      } else if (type === 'circle') {
+        area = Math.PI * Math.pow(dimensions.radius, 2);
+      } else {
+        return res.status(400).json({ error: `Unsupported shape type: ${type}` });
+      }
+
+      if (isPool) {
+        poolArea += area;
+      } else {
+        totalArea += area;
+      }
     });
+
+    const deckArea = totalArea - poolArea;
+    const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
+
+    res.json({
+      totalShapeArea: totalArea.toFixed(2),
+      poolArea: poolArea.toFixed(2),
+      usableDeckArea: deckArea.toFixed(2),
+      adjustedDeckArea: adjustedDeckArea.toFixed(2),
+      note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
+    });
+  }
+);
+
+// OCR Endpoint
+app.post(
+  '/upload-measurements',
+  upload.single('image'),
+  [
+    body('image').custom((_, { req }) => {
+      if (!req.file) {
+        throw new Error('Image file is required');
+      }
+      return true;
+    })
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+        tessedit_pageseg_mode: 6,
+        tessedit_char_whitelist: '0123456789.',
+        logger: info => console.log(info)
+      });
     console.log('OCR Output:', text);
 
     const numberPattern = /\d+(\.\d+)?/g;
@@ -99,8 +166,15 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
 });
 
 // Chatbot Endpoint
-app.post('/chatbot', async (req, res) => {
-  const { message } = req.body;
+app.post(
+  '/chatbot',
+  [body('message').isString().notEmpty().withMessage('message is required')],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { message } = req.body;
   const calculationGuide = `
 Here’s a detailed guide for calculating square footage and other shapes:
 1. Rectangle: L × W
