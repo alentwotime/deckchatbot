@@ -1,0 +1,43 @@
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const Jimp = require('jimp');
+const potrace = require('potrace');
+const { logger } = require('../server.cjs');
+
+async function digitalizeDrawing(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload an image.' });
+    }
+    const img = await Jimp.read(req.file.buffer);
+    img.greyscale().contrast(1).normalize().threshold({ max: 200 });
+
+    const buffer = await new Promise((resolve, reject) => {
+      img.getBuffer('image/png', (err, buf) => {
+        if (err) return reject(err);
+        resolve(buf);
+      });
+    });
+    const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
+    await fs.promises.writeFile(tmpPath, buffer);
+    const svg = await new Promise((resolve, reject) => {
+      potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, out) => {
+        fs.unlink(tmpPath, () => {});
+        if (err) return reject(new Error('digitalize'));
+        resolve(out);
+      });
+    });
+    res.set('Content-Type', 'image/svg+xml');
+    res.send(svg);
+  } catch (err) {
+    logger.error(err.stack);
+    if (err.message === 'digitalize') {
+      res.status(500).json({ error: 'Error digitalizing drawing.' });
+    } else {
+      res.status(500).json({ error: 'Error processing drawing.' });
+    }
+  }
+}
+
+module.exports = { digitalizeDrawing };

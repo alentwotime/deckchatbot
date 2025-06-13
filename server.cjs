@@ -1,10 +1,29 @@
+ codex/create-boilerplate-folder-structure-with-files
+const config = require('./config');
+
+if (!config.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
+}
+
+const express = require('express');
+const multer = require('multer');
+const Tesseract = require('tesseract.js');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const winston = require('winston');
+const { body, validationResult } = require('express-validator');
+const OpenAI = require('openai');
+const math = require('mathjs');
+=======
 @@ -17,216 +17,138 @@ const math = require('mathjs');
+ main
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
 const { addMessage, getRecentMessages } = require('./memory');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
 const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
@@ -12,7 +31,7 @@ if (!fs.existsSync(logDir)) {
 }
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: config.LOG_LEVEL,
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}]: ${message}`)
@@ -24,12 +43,16 @@ const logger = winston.createLogger({
 });
 
 const app = express();
+ codex/create-boilerplate-folder-structure-with-files
+const port = config.PORT;
+=======
  codex/suggest-improvements-for-bot-logic
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const port = process.env.PORT || 3000;
 =======
 const port = 3000;
+ main
  main
 
 app.use(cors());
@@ -43,6 +66,19 @@ app.use((req, _res, next) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+ codex/create-boilerplate-folder-structure-with-files
+const {
+  rectangleArea,
+  circleArea,
+  triangleArea,
+  polygonArea,
+  calculatePerimeter,
+  evaluateExpression,
+  shapeFromMessage,
+  deckAreaExplanation
+} = require('./utils/geometry');
+const { extractNumbers } = require('./utils/extract');
+=======
 function rectangleArea(length, width) {
   return length * width;
 }
@@ -204,6 +240,7 @@ function extractNumbers(rawText) {
   if (!matches) return [];
   return matches.map(Number).filter(n => n <= 500);
 }
+ main
 
 app.use(express.static(path.join(__dirname)));
 
@@ -562,4 +599,28 @@ app.get('*', (req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
+ codex/create-boilerplate-folder-structure-with-files
   logger.error(err.stack);
+  res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
+});
+
+if (require.main === module) {
+  app.listen(port, () => {
+    logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  });
+}
+
+module.exports = {
+  app,
+  rectangleArea,
+  circleArea,
+  triangleArea,
+  polygonArea,
+  shapeFromMessage,
+  deckAreaExplanation,
+  extractNumbers,
+  logger
+};
+=======
+  logger.error(err.stack);
+ main
