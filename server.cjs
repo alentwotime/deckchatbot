@@ -1,4 +1,7 @@
 require('dotenv').config();
+ codex/enhance-math-and-language-processing
+console.log("Loaded API Key:", process.env.OPENAI_API_KEY);
+=======
 
  codex/enhance-ocr-and-drawing-features
 =======
@@ -13,6 +16,7 @@ console.log('Loaded API Key:', process.env.OPENAI_API_KEY);
 =======
  main
  main
+ main
 
 const express = require('express');
 const multer = require('multer');
@@ -22,15 +26,21 @@ const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
+const http = require('http');
+const { Server } = require('socket.io');
 const OpenAI = require('openai');
+ codex/enhance-math-and-language-processing
+=======
  codex/deduplicate-shapefrommessage-functions
 const math = require("mathjs");
 =======
 const math = require('mathjs');
  main
+ main
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
+const nlp = require('compromise');
 const { addMessage, getRecentMessages } = require('./memory');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
@@ -53,6 +63,8 @@ const logger = winston.createLogger({
 });
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 const port = 3000;
 
 app.use(cors());
@@ -75,6 +87,9 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/enhance-math-and-language-processing
+  return (base * height) / 2;
+=======
  codex/deduplicate-shapefrommessage-functions
   return 0.5 * base * height;
 =======
@@ -88,6 +103,7 @@ function triangleArea(base, height) {
   return (base * height) / 2;
 =======
   return 0.5 * base * height;
+ main
  main
  main
  main
@@ -116,6 +132,8 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
+ codex/enhance-math-and-language-processing
+=======
  codex/deduplicate-shapefrommessage-functions
 
 =======
@@ -249,6 +267,7 @@ function formatShapeResponse(message) {
 }
 
  main
+ main
 function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   let explanation =
     'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
@@ -276,17 +295,41 @@ app.use(express.static(path.join(__dirname)));
 // OCR Endpoint
 =======
 function shapeFromMessage(message) {
-  const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  const numUnit = '(\\d+(?:\\.\\d+)?)\\s*(?:ft|feet|in|inches|m|meters)?';
+  const rectRegex = new RegExp(`rectangle\\s*${numUnit}\\s*(?:x|by|\\*)\\s*${numUnit}`, 'i');
+  const rectMatch = rectRegex.exec(message);
   if (rectMatch) {
     return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
   }
-  const circleMatch = /circle\s*radius\s*(\d+(?:\.\d+)?)/i.exec(message);
+
+  const circleRegex = new RegExp(`circle\\s*radius\\s*${numUnit}`, 'i');
+  const circleMatch = circleRegex.exec(message);
   if (circleMatch) {
     return { type: 'circle', dimensions: { radius: parseFloat(circleMatch[1]) } };
   }
-  const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+
+  const triRegex = new RegExp(`triangle\\s*${numUnit}\\s*(?:x|by|\\*)\\s*${numUnit}`, 'i');
+  const triMatch = triRegex.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+ codex/enhance-math-and-language-processing
+  }
+
+  const doc = nlp(message);
+  const numbers = doc.numbers().toNumber().out('array');
+  if (/rectangle/i.test(message) && numbers.length >= 2) {
+    return { type: 'rectangle', dimensions: { length: numbers[0], width: numbers[1] } };
+  }
+  if (/circle/i.test(message) && numbers.length >= 1) {
+    return { type: 'circle', dimensions: { radius: numbers[0] } };
+  }
+  if (/triangle/i.test(message) && numbers.length >= 2) {
+    return { type: 'triangle', dimensions: { base: numbers[0], height: numbers[1] } };
+  }
+  return null;
+}
+
+=======
 =======
  main
  main
@@ -294,6 +337,7 @@ function shapeFromMessage(message) {
   return explanation;
 }
 
+ main
  main
 function extractNumbers(rawText) {
   if (!rawText) return [];
@@ -540,8 +584,11 @@ app.post('/upload-measurements', upload.single('image'), [
 });
  main
 
+ codex/enhance-math-and-language-processing
+=======
  codex/deduplicate-shapefrommessage-functions
 =======
+ main
  main
  main
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
@@ -697,8 +744,48 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
 });
 
+io.on('connection', socket => {
+  socket.on('chat message', async msg => {
+    try {
+      const shape = shapeFromMessage(msg);
+      if (shape) {
+        const { type, dimensions } = shape;
+        let area = 0;
+        if (type === 'rectangle') {
+          area = rectangleArea(dimensions.length, dimensions.width);
+        } else if (type === 'circle') {
+          area = circleArea(dimensions.radius);
+        } else if (type === 'triangle') {
+          area = triangleArea(dimensions.base, dimensions.height);
+        }
+        const reply = `The ${type} area is ${area.toFixed(2)}`;
+        socket.emit('response', reply);
+        socket.emit('end');
+        return;
+      }
+
+      const history = getRecentMessages();
+      const stream = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        stream: true,
+        messages: [
+          ...history.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: msg }
+        ]
+      });
+      for await (const part of stream) {
+        const content = part.choices[0].delta?.content;
+        if (content) socket.emit('response', content);
+      }
+      socket.emit('end');
+    } catch (err) {
+      socket.emit('error', err.message);
+    }
+  });
+});
+
 if (require.main === module) {
-  app.listen(port, () => {
+  server.listen(port, () => {
     logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
   });
 }
