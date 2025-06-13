@@ -1,7 +1,16 @@
 # deckchatbot
 AI-powered chatbot for deck sales and quoting automation.
 
+ codex/clean-merge-remnants-and-files
+## Logging
+
+Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust the
+`LOG_LEVEL` environment variable (e.g. `info`, `debug`) to control verbosity.
+## Setup
+
+=======
 ## Installation
+ main
 ```bash
 npm install
 ```
@@ -54,7 +63,12 @@ curl -X POST http://localhost:3000/chatbot \
   -d '{"message":"How do I calculate deck area?"}'
 ```
 
+ codex/clean-merge-remnants-and-files
+## Running Tests
+
+=======
 ## Testing
+ main
 Install dependencies and run the test suite with:
 ```bash
 npm install
