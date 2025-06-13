@@ -90,6 +90,9 @@ body {
   <h2>Decking Chatbot</h2>
   <div id="messages"></div>
  HEAD
+ HEAD
+=======
+ ec1e610 (add new feature for deckchatbot)
   <form id="chatForm" autocomplete="off">
     <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
     <button id="sendBtn" type="submit">Send</button>
@@ -98,6 +101,7 @@ body {
     <input type="file" id="imageInput" accept="image/*">
     <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
   </div>
+ HEAD
 =======
   <input type="text" id="userInput" placeholder="Type your message...">
   <button id="sendBtn" onclick="sendMessage()">Send</button>
@@ -120,6 +124,8 @@ body {
 =======
  main
  5ca697d8bae95aaadcd4447502cf44197ddfae22
+=======
+>>>>>>> ec1e610 (add new feature for deckchatbot)
 </div>
 
 <script>
@@ -179,6 +185,9 @@ body {
 
     const messagesDiv = document.getElementById("messages");
  HEAD
+ HEAD
+=======
+ ec1e610 (add new feature for deckchatbot)
     try {
       const response = await fetch("/upload-measurements", {
         method: "POST",
@@ -204,6 +213,7 @@ body {
       botBubble.className = 'bot';
       botBubble.textContent = `Error: ${err.message}`;
       messagesDiv.appendChild(botBubble);
+ HEAD
 =======
     if (data.error) {
       messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> Error: ${data.error}</div>`;
@@ -224,11 +234,14 @@ body {
       result += `</div>`;
       messagesDiv.innerHTML += result;
  origin/main
+=======
+ ec1e610 (add new feature for deckchatbot)
     }
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     fileInput.value = "";
   }
+ HEAD
 
   async function uploadDrawing() {
     const drawInput = document.getElementById("drawingInput");
@@ -257,6 +270,8 @@ body {
 
     drawInput.value = "";
   }
+=======
+ ec1e610 (add new feature for deckchatbot)
 </script>
 {
 </script>
