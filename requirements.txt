@@ -8,8 +8,6 @@ cors
 dotenv
 openai
 python-dotenv
- 
-=======
 flask
 openai
 origin/main
