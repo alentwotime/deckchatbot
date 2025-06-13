@@ -25,8 +25,12 @@
   <input type="file" id="drawingInput" accept="image/*">
   <button id="drawingBtn" onclick="uploadDrawing()">Upload Drawing</button>
   <br>
+ codex/add-feature-for-bot-to-convert-drawings-to-digitalized-image
   <h3>Digitalized Drawing</h3>
   <img id="digitalImage" alt="Digitalized drawing" style="max-width:100%; display:block; margin-top:10px;" />
+=======
+  <img id="digitalImage" style="max-width:100%; display:block; margin-top:10px;" />
+ main
 </div>
 
 <script>
@@ -72,12 +76,18 @@
     if (data.error) {
       messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> Error: ${data.error}</div>`;
     } else {
-      let result = `<div><strong>Chatbot:</strong> Outer Deck Area: ${data.outerDeckArea} sq ft<br>
-        Pool Area: ${data.poolArea} sq ft<br>
-        Usable Deck Area: ${data.usableDeckArea} sq ft<br>
+      let result = `<div><strong>Chatbot:</strong> Outer Area: ${data.outerDeckArea} sq ft<br>
+        Inner Cutout Area: ${data.poolArea} sq ft<br>
+        Final Usable Deck Area: ${data.usableDeckArea} sq ft<br>
         Railing Footage: ${data.railingFootage} ft`;
+      if (data.explanation) {
+        result += `<br>${data.explanation}`;
+      }
       if (data.warning) {
         result += `<br><em>${data.warning}</em>`;
+      }
+      if (data.explanation) {
+        result += `<br>${data.explanation}`;
       }
       result += `</div>`;
       messagesDiv.innerHTML += result;

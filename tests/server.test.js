@@ -12,8 +12,21 @@ jest.mock('openai', () => {
 });
 const OpenAI = require('openai');
 const createMock = OpenAI.__createMock;
+const fs = require('fs');
+const path = require('path');
+const memoryDb = path.join(__dirname, 'memory_test.sqlite');
+process.env.MEM_DB = memoryDb;
 
 const { app } = require('../server.cjs');
+const memory = require('../memory');
+
+beforeEach(() => {
+  memory.clearMemory();
+});
+
+afterAll(() => {
+  if (fs.existsSync(memoryDb)) fs.unlinkSync(memoryDb);
+});
 
 describe('server endpoints', () => {
   test('/calculate-multi-shape', async () => {
@@ -32,7 +45,8 @@ describe('server endpoints', () => {
       poolArea: '78.54',
       usableDeckArea: '121.46',
       adjustedDeckArea: '133.61',
-      note: 'Adjusted for 10% wastage.'
+      note: 'Adjusted for 10% wastage.',
+      explanation: expect.stringContaining('usable surface')
     });
   });
 
@@ -52,13 +66,19 @@ describe('server endpoints', () => {
     const res = await request(app).post('/chatbot').send({ message: 'hello' });
     expect(res.status).toBe(200);
     expect(res.body.response).toBe('mocked');
+    const history = memory.getRecentMessages();
+    expect(history.slice(-2)).toEqual([
+      expect.objectContaining({ role: 'user', content: 'hello' }),
+      expect.objectContaining({ role: 'assistant', content: 'mocked' })
+    ]);
   });
 
   test('/chatbot handles rectangle', async () => {
     createMock.mockClear();
     const res = await request(app).post('/chatbot').send({ message: 'rectangle 5x10' });
     expect(res.status).toBe(200);
-    expect(res.body.response).toBe('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('simple deck with no cutouts');
     expect(createMock).not.toHaveBeenCalled();
   });
 });

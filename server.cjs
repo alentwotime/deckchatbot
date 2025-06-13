@@ -5,10 +5,16 @@ const Tesseract = require('tesseract.js');
 const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
+ codex/add-feature-for-bot-to-convert-drawings-to-digitalized-image
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const fs = require('fs');
 const os = require('os');
+=======
+const { addMessage, addMeasurement, getRecentMessages } = require('./memory');
+const Jimp = require('jimp');
+
+ main
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -34,6 +40,25 @@ function circleArea(radius) {
 
 function triangleArea(base, height) {
   return (base * height) / 2;
+}
+
+// Build a short explanation describing how deck area is calculated.
+// hasCutout denotes whether any inner shapes (like a pool) were provided.
+// hasMultipleShapes indicates if more than one shape was supplied.
+function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
+  let explanation =
+    'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
+  if (!hasMultipleShapes && !hasCutout) {
+    explanation +=
+      ' This is a simple deck with no cutouts. The entire area is considered usable.';
+  } else if (hasCutout) {
+    explanation +=
+      ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+  } else {
+    explanation +=
+      " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+  }
+  return explanation;
 }
 
 function shapeFromMessage(message) {
@@ -133,12 +158,19 @@ app.post('/calculate-multi-shape', (req, res) => {
   });
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
+  const hasCutout = shapes.some(s => s.isPool);
+const explanation = deckAreaExplanation({
+  hasCutout,
+  hasMultipleShapes: shapes.length > 1
+});
+
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
     usableDeckArea: deckArea.toFixed(2),
     adjustedDeckArea: adjustedDeckArea.toFixed(2),
-    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
+    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.',
+    explanation
   });
 });
 
@@ -184,17 +216,51 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
       : null;
 
-    res.json({
+    const explanation = deckAreaExplanation({
+      hasCutout: poolArea > 0,
+      hasMultipleShapes: poolArea > 0
+    });
+
+    const result = {
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
       usableDeckArea: deckArea.toFixed(2),
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
-      warning
-    });
+      warning,
+ codex/update-bot-response-for-deck-area-calculations
+      explanation,
+=======
+    const result = {
+      explanation: hasPool
+        ? 'When we calculate square footage, we only include the usable surface area of the deck. This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.'
+        : 'When we calculate square footage, we only include the usable surface area of the deck. This is a simple deck with no cutouts. The entire area is considered usable.',
+ main
+      ocrText: text,
+      rawNumbers: numbers
+    };
+    const result = {
+  explanation,
+
+
+// Digitalize drawing endpoint
+app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload an image.' });
+    }
+    const img = await Jimp.read(req.file.buffer);
+    img
+      .greyscale()
+      .contrast(1)
+      .threshold({ max: 128 });
+
+    const buffer = await img.getBufferAsync(Jimp.MIME_PNG);
+    res.set('Content-Type', 'image/png');
+    res.send(buffer);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error processing image.' });
+    res.status(500).json({ error: 'Error processing drawing.' });
   }
 });
 
@@ -249,6 +315,7 @@ Here’s a detailed guide for calculating square footage and other shapes:
 8. Fascia Board: total perimeter length (excluding steps).
 `;
   try {
+    addMessage('user', message);
     const shape = shapeFromMessage(message);
     if (shape) {
       const { type, dimensions } = shape;
@@ -260,18 +327,29 @@ Here’s a detailed guide for calculating square footage and other shapes:
       } else if (type === 'triangle') {
         area = triangleArea(dimensions.base, dimensions.height);
       }
-      return res.json({ response: `The ${type} area is ${area.toFixed(2)}.` });
+      const hasCutout = /pool|cutout/i.test(message);
+      const explanation = deckAreaExplanation({
+        hasCutout,
+        hasMultipleShapes: hasCutout
+      });
+      const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
+      addMessage('assistant', reply);
+      return res.json({ response: reply });
     }
+    const history = getRecentMessages();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: `You are a smart math bot using this calculation guide:
 ${calculationGuide}
 Always form follow-up questions if needed to clarify user data.` },
+        ...history.map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: message }
       ]
     });
-    res.json({ response: completion.choices[0].message.content });
+    const botReply = completion.choices[0].message.content;
+    addMessage('assistant', botReply);
+    res.json({ response: botReply });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error communicating with OpenAI.' });
@@ -295,5 +373,6 @@ module.exports = {
   triangleArea,
   polygonArea,
   shapeFromMessage,
+  deckAreaExplanation,
   extractNumbers,
 };
