@@ -61,7 +61,11 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/remove-merge-conflict-markers
   return (base * height) / 2;
+=======
+  return 0.5 * base * height;
+ main
 }
 
 function polygonArea(points) {
@@ -97,6 +101,7 @@ function evaluateExpression(text) {
 }
 
 function shapeFromMessage(message) {
+ codex/remove-merge-conflict-markers
   const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (rectMatch) {
     return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
@@ -108,6 +113,27 @@ function shapeFromMessage(message) {
   const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+=======
+  const text = message.toLowerCase();
+  let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+  }
+  m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'circle', dimensions: { radius: parseFloat(m[1]) } };
+  }
+  m = text.match(/triangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'triangle', dimensions: { base: parseFloat(m[1]), height: parseFloat(m[2]) } };
+  }
+  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return {
+      type: 'trapezoid',
+      dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
+    };
+ main
   }
   return null;
 }
@@ -148,7 +174,6 @@ app.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const { shapes, wastagePercent = 0 } = req.body;
     let totalArea = 0;
     let poolArea = 0;
@@ -202,21 +227,23 @@ app.post('/upload-measurements', upload.single('image'), [
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+ codex/remove-merge-conflict-markers
     const {
       data: { text }
     } = await Tesseract.recognize(req.file.buffer, 'eng', {
+=======
+    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+ main
       tessedit_pageseg_mode: 6,
       tessedit_char_whitelist: '0123456789.',
       logger: info => logger.debug(info)
     });
-    logger.debug(`OCR Output: ${text}`);
     const numbers = extractNumbers(text);
     if (numbers.length < 6) {
       return res.status(400).json({
         error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
       });
     }
-
     const hasPool = /pool/i.test(text);
     const midpoint = hasPool ? numbers.length / 2 : numbers.length;
     const outerPoints = [];
@@ -304,19 +331,28 @@ app.post(
       if (shape) {
         const { type, dimensions } = shape;
         let area = 0;
+        let perimeter = null;
         if (type === 'rectangle') {
           area = rectangleArea(dimensions.length, dimensions.width);
+          perimeter = 2 * (dimensions.length + dimensions.width);
         } else if (type === 'circle') {
           area = circleArea(dimensions.radius);
+          perimeter = 2 * Math.PI * dimensions.radius;
         } else if (type === 'triangle') {
           area = triangleArea(dimensions.base, dimensions.height);
+        } else if (type === 'trapezoid') {
+          area = 0.5 * (dimensions.base1 + dimensions.base2) * dimensions.height;
         }
         const hasCutout = /pool|cutout/i.test(message);
         const explanation = deckAreaExplanation({
           hasCutout,
           hasMultipleShapes: hasCutout
         });
-        const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
+        let reply = `The ${type} area is ${area.toFixed(2)}.`;
+        if (perimeter !== null) {
+          reply += ` Perimeter is ${perimeter.toFixed(2)}.`;
+        }
+        reply += ` ${explanation}`;
         addMessage('assistant', reply);
         return res.json({ response: reply });
       }
