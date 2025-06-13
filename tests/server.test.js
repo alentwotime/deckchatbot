@@ -40,12 +40,14 @@ describe('server endpoints', () => {
         wastagePercent: 10
       });
     expect(res.status).toBe(200);
-    expect(res.body.totalShapeArea).toBe('200.00');
-    expect(res.body.poolArea).toBe('78.54');
-    expect(res.body.usableDeckArea).toBe('121.46');
-    expect(res.body.adjustedDeckArea).toBe('133.61');
-    expect(res.body.note).toBe('Adjusted for 10% wastage.');
-    expect(res.body.explanation).toMatch(/composite deck/);
+    expect(res.body).toEqual({
+      totalShapeArea: '200.00',
+      poolArea: '78.54',
+      usableDeckArea: '121.46',
+      adjustedDeckArea: '133.61',
+      note: 'Adjusted for 10% wastage.',
+      explanation: expect.stringContaining('usable surface')
+    });
   });
 
   test('/upload-measurements requires file', async () => {
