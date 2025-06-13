@@ -5,9 +5,13 @@ require('dotenv').config();
 if (!process.env.OPENAI_API_KEY) {
   console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
+ codex/deduplicate-shapefrommessage-functions
+console.log("Loaded API Key:", process.env.OPENAI_API_KEY);
+=======
  codex/clean-up-merge-artifacts
 console.log('Loaded API Key:', process.env.OPENAI_API_KEY);
 =======
+ main
  main
 
 const express = require('express');
@@ -19,7 +23,11 @@ const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
 const OpenAI = require('openai');
+ codex/deduplicate-shapefrommessage-functions
+const math = require("mathjs");
+=======
 const math = require('mathjs');
+ main
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
@@ -67,6 +75,9 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/deduplicate-shapefrommessage-functions
+  return 0.5 * base * height;
+=======
  codex/clean-up-merge-artifacts
   return (base * height) / 2;
 =======
@@ -77,6 +88,7 @@ function triangleArea(base, height) {
   return (base * height) / 2;
 =======
   return 0.5 * base * height;
+ main
  main
  main
  main
@@ -104,6 +116,10 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
+ codex/deduplicate-shapefrommessage-functions
+
+=======
+ main
 function evaluateExpression(text) {
   try {
     const result = math.evaluate(text);
@@ -114,6 +130,19 @@ function evaluateExpression(text) {
   return null;
 }
 
+ codex/deduplicate-shapefrommessage-functions
+
+// Parse message for supported shapes and return structured description
+function shapeFromMessage(message) {
+  const text = message.toLowerCase();
+  let m = text.match(/rectangle.*?(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+  }
+  m = text.match(/triangle.*?(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'triangle', dimensions: { base: parseFloat(m[1]), height: parseFloat(m[2]) } };
+=======
  codex/clean-up-merge-artifacts
 function shapeInfoFromMessage(msg) {
   const text = msg.toLowerCase();
@@ -150,10 +179,50 @@ function shapeFromMessage(message) {
   let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
   if (m) {
     return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+ main
   }
   m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
   if (m) {
     return { type: 'circle', dimensions: { radius: parseFloat(m[1]) } };
+ codex/deduplicate-shapefrommessage-functions
+  }
+  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return {
+      type: 'trapezoid',
+      dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
+    };
+  }
+  return null;
+}
+
+// Format a human friendly response for a shape message
+function formatShapeResponse(message) {
+  const shape = shapeFromMessage(message);
+  if (!shape) return null;
+  const { type, dimensions } = shape;
+  if (type === 'rectangle') {
+    const area = rectangleArea(dimensions.length, dimensions.width).toFixed(2);
+    const peri = (2 * (dimensions.length + dimensions.width)).toFixed(2);
+    return `Rectangle area: ${area} sq ft, perimeter: ${peri} ft`;
+  }
+  if (type === 'triangle') {
+    const area = triangleArea(dimensions.base, dimensions.height).toFixed(2);
+    return `Triangle area: ${area} sq ft`;
+  }
+  if (type === 'circle') {
+    const area = circleArea(dimensions.radius).toFixed(2);
+    const circ = (2 * Math.PI * dimensions.radius).toFixed(2);
+    return `Circle area: ${area} sq ft, circumference: ${circ} ft`;
+  }
+  if (type === 'trapezoid') {
+    const { base1, base2, height } = dimensions;
+    const area = (0.5 * (base1 + base2) * height).toFixed(2);
+    return `Trapezoid area: ${area} sq ft`;
+  }
+  return null;
+}
+=======
   }
   m = text.match(/triangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
   if (m) {
@@ -179,6 +248,7 @@ function shapeFromMessage(message) {
   return null;
 }
 
+ main
 function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   let explanation =
     'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
@@ -198,6 +268,13 @@ function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   return explanation;
 }
 
+ codex/deduplicate-shapefrommessage-functions
+
+app.use(express.static(path.join(__dirname)));
+
+
+// OCR Endpoint
+=======
 function shapeFromMessage(message) {
   const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (rectMatch) {
@@ -217,6 +294,7 @@ function shapeFromMessage(message) {
   return explanation;
 }
 
+ main
 function extractNumbers(rawText) {
   if (!rawText) return [];
   const cleaned = rawText.replace(/["'″’]/g, '');
@@ -462,6 +540,9 @@ app.post('/upload-measurements', upload.single('image'), [
 });
  main
 
+ codex/deduplicate-shapefrommessage-functions
+=======
+ main
  main
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
   try {
