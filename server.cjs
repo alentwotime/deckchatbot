@@ -61,7 +61,11 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/remove-merge-conflict-markers
+  return (base * height) / 2;
+=======
   return 0.5 * base * height;
+ main
 }
 
 function polygonArea(points) {
@@ -97,6 +101,19 @@ function evaluateExpression(text) {
 }
 
 function shapeFromMessage(message) {
+ codex/remove-merge-conflict-markers
+  const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (rectMatch) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
+  }
+  const circleMatch = /circle\s*radius\s*(\d+(?:\.\d+)?)/i.exec(message);
+  if (circleMatch) {
+    return { type: 'circle', dimensions: { radius: parseFloat(circleMatch[1]) } };
+  }
+  const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  if (triMatch) {
+    return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+=======
   const text = message.toLowerCase();
   let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
   if (m) {
@@ -116,6 +133,7 @@ function shapeFromMessage(message) {
       type: 'trapezoid',
       dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
     };
+ main
   }
   return null;
 }
@@ -209,7 +227,13 @@ app.post('/upload-measurements', upload.single('image'), [
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+ codex/remove-merge-conflict-markers
+    const {
+      data: { text }
+    } = await Tesseract.recognize(req.file.buffer, 'eng', {
+=======
     const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+ main
       tessedit_pageseg_mode: 6,
       tessedit_char_whitelist: '0123456789.',
       logger: info => logger.debug(info)
@@ -233,21 +257,21 @@ app.post('/upload-measurements', upload.single('image'), [
       }
     }
     const outerArea = polygonArea(outerPoints);
-    const poolArea = hasPool ? polygonArea(poolPoints) : 0;
-    const deckArea = outerArea - poolArea;
+    const poolAreaValue = hasPool ? polygonArea(poolPoints) : 0;
+    const deckArea = outerArea - poolAreaValue;
     const railingFootage = calculatePerimeter(outerPoints);
     const fasciaBoardLength = railingFootage;
 
     const warning = deckArea > 1000 ? 'Deck area exceeds 1000 sq ft. Please verify measurements.' : null;
 
     const explanation = deckAreaExplanation({
-      hasCutout: poolArea > 0,
-      hasMultipleShapes: poolArea > 0
+      hasCutout: poolAreaValue > 0,
+      hasMultipleShapes: poolAreaValue > 0
     });
 
     res.json({
       outerDeckArea: outerArea.toFixed(2),
-      poolArea: poolArea.toFixed(2),
+      poolArea: poolAreaValue.toFixed(2),
       usableDeckArea: deckArea.toFixed(2),
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
