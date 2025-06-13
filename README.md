@@ -14,6 +14,9 @@ codex/install-express-validator-and-apply-validation
 npm install
 ```
 
+The previous `setup.sh` and `run_setup.sh` scripts have been removed. Install
+dependencies directly with `npm install`.
+
 Copy `.env.example` to `.env` and set your `OPENAI_API_KEY` before running the server.
 
 ## Running
