@@ -1,98 +1,42 @@
 # deckchatbot
+
 AI-powered chatbot for deck sales and quoting automation.
 
- codex/fix-401-authentication-error-due-to-invalid-api-key
 ## Setup
 
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Create a `.env` file in the project root with your OpenAI API key:
-   ```bash
-   cp .env.example .env
-   # then edit .env and set OPENAI_API_KEY
-   ```
+2. Copy `.env.example` to `.env` and set your `OPENAI_API_KEY`.
 3. Start the server:
    ```bash
    npm start
    ```
 
-The app will be available at `http://localhost:3000`.
-=======
- codex/clean-merge-remnants-and-files
-## Logging
-
-Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust the
-`LOG_LEVEL` environment variable (e.g. `info`, `debug`) to control verbosity.
-## Setup
-
-=======
-## Installation
- main
-```bash
-npm install
-```
-
-codex/decide-necessity-of-setup-files-and-update-docs
-The previous `setup.sh` and `run_setup.sh` scripts have been removed. Install
-dependencies directly with `npm install`.
-
-Copy `.env.example` to `.env` and set your `OPENAI_API_KEY` before running the server.
-=======
-## Environment Variables
-Copy `.env.example` to `.env` and set your keys:
-main
-
-```
-OPENAI_API_KEY=your-api-key
-LOG_LEVEL=info
-```
-
-## Running the Server
-```bash
-npm start
-```
+The app runs at `http://localhost:3000`.
 
 ## Logging
-Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust `LOG_LEVEL` to control verbosity.
+
+Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust `LOG_LEVEL` in `.env` to control verbosity.
 
 ## API Endpoints
 
 ### `POST /calculate-multi-shape`
-Calculate the area of multiple shapes. Example request:
-```bash
-curl -X POST http://localhost:3000/calculate-multi-shape \
-  -H "Content-Type: application/json" \
-  -d '{"shapes":[{"type":"rectangle","dimensions":{"length":10,"width":20}},{"type":"polygon","dimensions":{"points":[{"x":0,"y":0},{"x":4,"y":0},{"x":4,"y":3}]}},{"type":"circle","dimensions":{"radius":5},"isPool":true}],"wastagePercent":10}'
-```
+Calculate the area of multiple shapes.
 
 ### `POST /upload-measurements`
-Upload an image for OCR calculation:
-```bash
-curl -X POST http://localhost:3000/upload-measurements \
-  -F image=@/path/to/photo.jpg
-```
+Upload an image containing measurements. OCR is used to extract points and compute deck area.
+
+### `POST /digitalize-drawing`
+Upload a photo of a hand-drawn deck. The image is vectorized and OCR is run to detect coordinate pairs. The response includes an SVG along with any detected points and calculated area.
 
 ### `POST /chatbot`
-Ask the chatbot a question:
-```bash
-curl -X POST http://localhost:3000/chatbot \
-  -H "Content-Type: application/json" \
-  -d '{"message":"How do I calculate deck area?"}'
-```
+General chat endpoint.
 
- codex/clean-merge-remnants-and-files
-## Running Tests
-
-=======
 ## Testing
- main
-Install dependencies and run the test suite with:
+
+Run the test suite with:
 ```bash
-npm install
 npm test
 ```
-
-The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.
- main
