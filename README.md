@@ -6,8 +6,15 @@ AI-powered chatbot for deck sales and quoting automation.
 npm install
 ```
 
+codex/decide-necessity-of-setup-files-and-update-docs
+The previous `setup.sh` and `run_setup.sh` scripts have been removed. Install
+dependencies directly with `npm install`.
+
+Copy `.env.example` to `.env` and set your `OPENAI_API_KEY` before running the server.
+=======
 ## Environment Variables
 Copy `.env.example` to `.env` and set your keys:
+main
 
 ```
 OPENAI_API_KEY=your-api-key
