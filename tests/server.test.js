@@ -77,7 +77,8 @@ describe('server endpoints', () => {
     createMock.mockClear();
     const res = await request(app).post('/chatbot').send({ message: 'rectangle 5x10' });
     expect(res.status).toBe(200);
-    expect(res.body.response).toBe('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('simple deck with no cutouts');
     expect(createMock).not.toHaveBeenCalled();
   });
 });

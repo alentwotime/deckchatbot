@@ -35,6 +35,25 @@ function triangleArea(base, height) {
   return (base * height) / 2;
 }
 
+// Build a short explanation describing how deck area is calculated.
+// hasCutout denotes whether any inner shapes (like a pool) were provided.
+// hasMultipleShapes indicates if more than one shape was supplied.
+function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
+  let explanation =
+    'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
+  if (!hasMultipleShapes && !hasCutout) {
+    explanation +=
+      ' This is a simple deck with no cutouts. The entire area is considered usable.';
+  } else if (hasCutout) {
+    explanation +=
+      ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+  } else {
+    explanation +=
+      " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+  }
+  return explanation;
+}
+
 function shapeFromMessage(message) {
   const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (rectMatch) {
@@ -133,15 +152,11 @@ app.post('/calculate-multi-shape', (req, res) => {
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
   const hasCutout = shapes.some(s => s.isPool);
-  let explanation =
-    'When we calculate square footage, we only include the usable surface area of the deck.';
-  if (shapes.length === 1 && !hasCutout) {
-    explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
-  } else if (hasCutout) {
-    explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
-  } else {
-    explanation += " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
-  }
+const explanation = deckAreaExplanation({
+  hasCutout,
+  hasMultipleShapes: shapes.length > 1
+});
+
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
@@ -194,6 +209,11 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
       : null;
 
+    const explanation = deckAreaExplanation({
+      hasCutout: poolArea > 0,
+      hasMultipleShapes: poolArea > 0
+    });
+
     const result = {
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
@@ -201,21 +221,20 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
       warning,
+ codex/update-bot-response-for-deck-area-calculations
+      explanation,
+=======
     const result = {
       explanation: hasPool
         ? 'When we calculate square footage, we only include the usable surface area of the deck. This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.'
         : 'When we calculate square footage, we only include the usable surface area of the deck. This is a simple deck with no cutouts. The entire area is considered usable.',
+ main
       ocrText: text,
       rawNumbers: numbers
     };
-    addMeasurement(result);
-    res.json(result);
+    const result = {
+  explanation,
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error processing image.' });
-  }
-});
 
 // Digitalize drawing endpoint
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
@@ -265,7 +284,12 @@ Here’s a detailed guide for calculating square footage and other shapes:
       } else if (type === 'triangle') {
         area = triangleArea(dimensions.base, dimensions.height);
       }
-      const reply = `The ${type} area is ${area.toFixed(2)}.`;
+      const hasCutout = /pool|cutout/i.test(message);
+      const explanation = deckAreaExplanation({
+        hasCutout,
+        hasMultipleShapes: hasCutout
+      });
+      const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
       addMessage('assistant', reply);
       return res.json({ response: reply });
     }
@@ -306,5 +330,6 @@ module.exports = {
   triangleArea,
   polygonArea,
   shapeFromMessage,
+  deckAreaExplanation,
   extractNumbers,
 };

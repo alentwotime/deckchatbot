@@ -75,6 +75,9 @@
         Inner Cutout Area: ${data.poolArea} sq ft<br>
         Final Usable Deck Area: ${data.usableDeckArea} sq ft<br>
         Railing Footage: ${data.railingFootage} ft`;
+      if (data.explanation) {
+        result += `<br>${data.explanation}`;
+      }
       if (data.warning) {
         result += `<br><em>${data.warning}</em>`;
       }
