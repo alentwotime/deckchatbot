@@ -12,17 +12,14 @@ const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
-const http = require('http');
-const { Server } = require('socket.io');
 const OpenAI = require('openai');
 const math = require('mathjs');
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
-const nlp = require('compromise');
 const { addMessage, getRecentMessages } = require('./memory');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
@@ -42,9 +39,13 @@ const logger = winston.createLogger({
 });
 
 const app = express();
+ codex/suggest-improvements-for-bot-logic
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const port = process.env.PORT || 3000;
+=======
+const port = 3000;
+ main
 
 app.use(cors());
 app.use(express.json());
@@ -66,7 +67,11 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/suggest-improvements-for-bot-logic
   return (base * height) / 2;
+=======
+  return 0.5 * base * height;
+ main
 }
 
 function polygonArea(points) {
@@ -86,7 +91,7 @@ function calculatePerimeter(points) {
   for (let i = 0; i < n; i++) {
     const { x: x1, y: y1 } = points[i];
     const { x: x2, y: y2 } = points[(i + 1) % n];
-    perimeter += Math.hypot(x2 - x1, y2 - y1);
+    perimeter += Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
   }
   return perimeter;
 }
@@ -97,11 +102,12 @@ function evaluateExpression(text) {
     if (typeof result !== 'function' && result !== undefined) {
       return result.toString();
     }
-  } catch (_) {}
+  } catch (e) {}
   return null;
 }
 
 function shapeFromMessage(message) {
+ codex/suggest-improvements-for-bot-logic
   const numUnit = '(\\d+(?:\\.\\d+)?)\\s*(?:ft|feet|in|inches|m|meters)?';
   const rectRegex = new RegExp(`rectangle\\s*${numUnit}\\s*(?:x|by|\\*)\\s*${numUnit}`, 'i');
   const rectMatch = rectRegex.exec(message);
@@ -163,6 +169,27 @@ function formatShapeResponse(message) {
     const { base1, base2, height } = dimensions;
     const area = (0.5 * (base1 + base2) * height).toFixed(2);
     return `Trapezoid area: ${area} sq ft`;
+=======
+  const text = message.toLowerCase();
+  let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+  }
+  m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'circle', dimensions: { radius: parseFloat(m[1]) } };
+  }
+  m = text.match(/triangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'triangle', dimensions: { base: parseFloat(m[1]), height: parseFloat(m[2]) } };
+  }
+  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return {
+      type: 'trapezoid',
+      dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
+    };
+ main
   }
   return null;
 }
@@ -173,7 +200,11 @@ function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   if (!hasMultipleShapes && !hasCutout) {
     explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
   } else if (hasCutout) {
+ codex/suggest-improvements-for-bot-logic
     explanation += ' This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.';
+=======
+    explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+ main
   } else {
     explanation += " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
   }
@@ -206,26 +237,26 @@ app.post(
     const { shapes, wastagePercent = 0 } = req.body;
     let totalArea = 0;
     let poolArea = 0;
-    shapes.forEach(shape => {
-      const { type, dimensions, isPool } = shape;
-      let area = 0;
-      if (type === 'rectangle') {
-        area = rectangleArea(dimensions.length, dimensions.width);
-      } else if (type === 'circle') {
-        area = circleArea(dimensions.radius);
-      } else if (type === 'triangle') {
-        area = triangleArea(dimensions.base, dimensions.height);
-      } else if (type === 'polygon') {
-        area = polygonArea(dimensions.points);
-      } else {
-        return res.status(400).json({ error: `Unsupported shape type: ${type}` });
-      }
-      if (isPool) {
-        poolArea += area;
-      } else {
-        totalArea += area;
-      }
-    });
+  for (const shape of shapes) {
+    const { type, dimensions, isPool } = shape;
+    let area = 0;
+    if (type === 'rectangle') {
+      area = rectangleArea(dimensions.length, dimensions.width);
+    } else if (type === 'circle') {
+      area = circleArea(dimensions.radius);
+    } else if (type === 'triangle') {
+      area = triangleArea(dimensions.base, dimensions.height);
+    } else if (type === 'polygon') {
+      area = polygonArea(dimensions.points);
+    } else {
+      return res.status(400).json({ error: `Unsupported shape type: ${type}` });
+    }
+    if (isPool) {
+      poolArea += area;
+    } else {
+      totalArea += area;
+    }
+  }
     const deckArea = totalArea - poolArea;
     const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
     const explanation = deckAreaExplanation({
@@ -243,6 +274,7 @@ app.post(
   }
 );
 
+ codex/suggest-improvements-for-bot-logic
 app.post(
   '/upload-measurements',
   upload.single('image'),
@@ -315,6 +347,71 @@ app.post(
     }
   }
 );
+=======
+app.post('/upload-measurements', upload.single('image'), [
+  body('image').custom((_, { req }) => {
+    if (!req.file) {
+      throw new Error('Image file is required');
+    }
+    return true;
+  })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+      tessedit_pageseg_mode: 6,
+      tessedit_char_whitelist: '0123456789.',
+      logger: info => logger.debug(info)
+    });
+    const numbers = extractNumbers(text);
+    if (numbers.length < 6) {
+      return res.status(400).json({
+        error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
+      });
+    }
+    const hasPool = /pool/i.test(text);
+    const midpoint = hasPool ? numbers.length / 2 : numbers.length;
+    const outerPoints = [];
+    for (let i = 0; i < midpoint; i += 2) {
+      outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
+    }
+    const poolPoints = [];
+    if (hasPool) {
+      for (let i = midpoint; i < numbers.length; i += 2) {
+        poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+      }
+    }
+    const outerArea = polygonArea(outerPoints);
+    const poolArea = hasPool ? polygonArea(poolPoints) : 0;
+    const deckArea = outerArea - poolArea;
+    const railingFootage = calculatePerimeter(outerPoints);
+    const fasciaBoardLength = railingFootage;
+
+    const warning = deckArea > 1000 ? 'Deck area exceeds 1000 sq ft. Please verify measurements.' : null;
+
+    const explanation = deckAreaExplanation({
+      hasCutout: poolArea > 0,
+      hasMultipleShapes: poolArea > 0
+    });
+
+    res.json({
+      outerDeckArea: outerArea.toFixed(2),
+      poolArea: poolArea.toFixed(2),
+      usableDeckArea: deckArea.toFixed(2),
+      railingFootage: railingFootage.toFixed(2),
+      fasciaBoardLength: fasciaBoardLength.toFixed(2),
+      warning,
+      explanation
+    });
+  } catch (err) {
+    logger.error(err.stack);
+    res.status(500).json({ error: 'Error processing image.' });
+  }
+});
+ main
 
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
   try {
@@ -323,21 +420,30 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
     }
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
+ codex/suggest-improvements-for-bot-logic
     const buffer = await new Promise((resolve, reject) => {
       img.getBuffer('image/png', (err, data) => {
         if (err) return reject(err);
         resolve(data);
+=======
+
+    const buffer = await new Promise((resolve, reject) => {
+      img.getBuffer('image/png', (err, buf) => {
+        if (err) return reject(err);
+        resolve(buf);
+ main
       });
     });
     const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
     await fs.promises.writeFile(tmpPath, buffer);
     const svg = await new Promise((resolve, reject) => {
-      potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, svg) => {
+      potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, out) => {
         fs.unlink(tmpPath, () => {});
-        if (err) return reject(err);
-        resolve(svg);
+        if (err) return reject(new Error('digitalize'));
+        resolve(out);
       });
     });
+ codex/suggest-improvements-for-bot-logic
 
     const {
       data: { text }
@@ -360,23 +466,34 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       perimeter = calculatePerimeter(points);
     }
 
+=======
+ main
     res.set('Content-Type', 'image/svg+xml');
     res.send(svg);
   } catch (err) {
     logger.error(err.stack);
+ codex/suggest-improvements-for-bot-logic
     res.status(500).json({ error: 'Error digitalizing drawing.' });
+=======
+    if (err.message === 'digitalize') {
+      res.status(500).json({ error: 'Error digitalizing drawing.' });
+    } else {
+      res.status(500).json({ error: 'Error processing drawing.' });
+    }
+ main
   }
 });
 
 app.post(
   '/chatbot',
-  [body('message').isString().notEmpty().withMessage('message is required')],
+  [body('message').exists({ checkFalsy: true }).withMessage('message is required')],
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
     const { message } = req.body;
+ codex/suggest-improvements-for-bot-logic
 
     const shape = shapeFromMessage(message);
     if (shape) {
@@ -407,6 +524,40 @@ app.post(
 
     try {
       addMessage('user', message);
+=======
+    const calculationGuide = `Here’s a detailed guide for calculating square footage and other shapes:\n1. Rectangle: L × W\n2. Triangle: (1/2) × Base × Height\n3. Circle: π × Radius²\n4. Half Circle: (1/2) × π × Radius²\n5. Quarter Circle: (1/4) × π × Radius²\n6. Trapezoid: (1/2) × (Base1 + Base2) × Height\n7. Complex Shapes: sum of all simpler shapes’ areas.\n8. Fascia Board: total perimeter length (excluding steps).`;
+    try {
+      addMessage('user', message);
+      const shape = shapeFromMessage(message);
+      if (shape) {
+        const { type, dimensions } = shape;
+        let area = 0;
+        let perimeter = null;
+        if (type === 'rectangle') {
+          area = rectangleArea(dimensions.length, dimensions.width);
+          perimeter = 2 * (dimensions.length + dimensions.width);
+        } else if (type === 'circle') {
+          area = circleArea(dimensions.radius);
+          perimeter = 2 * Math.PI * dimensions.radius;
+        } else if (type === 'triangle') {
+          area = triangleArea(dimensions.base, dimensions.height);
+        } else if (type === 'trapezoid') {
+          area = 0.5 * (dimensions.base1 + dimensions.base2) * dimensions.height;
+        }
+        const hasCutout = /pool|cutout/i.test(message);
+        const explanation = deckAreaExplanation({
+          hasCutout,
+          hasMultipleShapes: hasCutout
+        });
+        let reply = `The ${type} area is ${area.toFixed(2)}.`;
+        if (perimeter !== null) {
+          reply += ` Perimeter is ${perimeter.toFixed(2)}.`;
+        }
+        reply += ` ${explanation}`;
+        addMessage('assistant', reply);
+        return res.json({ response: reply });
+      }
+ main
       const history = getRecentMessages();
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -435,48 +586,8 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
 });
 
-io.on('connection', socket => {
-  socket.on('chat message', async msg => {
-    try {
-      const shape = shapeFromMessage(msg);
-      if (shape) {
-        const { type, dimensions } = shape;
-        let area = 0;
-        if (type === 'rectangle') {
-          area = rectangleArea(dimensions.length, dimensions.width);
-        } else if (type === 'circle') {
-          area = circleArea(dimensions.radius);
-        } else if (type === 'triangle') {
-          area = triangleArea(dimensions.base, dimensions.height);
-        }
-        const reply = `The ${type} area is ${area.toFixed(2)}`;
-        socket.emit('response', reply);
-        socket.emit('end');
-        return;
-      }
-
-      const history = getRecentMessages();
-      const stream = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        stream: true,
-        messages: [
-          ...history.map(m => ({ role: m.role, content: m.content })),
-          { role: 'user', content: msg }
-        ]
-      });
-      for await (const part of stream) {
-        const content = part.choices[0].delta?.content;
-        if (content) socket.emit('response', content);
-      }
-      socket.emit('end');
-    } catch (err) {
-      socket.emit('error', err.message);
-    }
-  });
-});
-
 if (require.main === module) {
-  server.listen(port, () => {
+  app.listen(port, () => {
     logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
   });
 }
