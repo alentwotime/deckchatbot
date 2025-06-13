@@ -1,3 +1,4 @@
+ HEAD
 flash 
 openai
 express
@@ -8,3 +9,7 @@ dotenv
 openai
 python-dotenv
  
+=======
+flask
+openai
+origin/main
