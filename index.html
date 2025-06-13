@@ -8,14 +8,97 @@
     #chat { max-width: 600px; margin: auto; }
     #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; background: #f9f9f9; }
     #userInput { width: 80%; }
-    #sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
+#sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
+.note { margin: 0 0 10px 0; color: #555; font-size: 0.9em; }
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #a2d9ff, #f0f9ff);
+}
+#chat {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+    }
+
+    #messages .user {
+      background: #e1ffc7;
+      padding: 6px 10px;
+      border-radius: 6px;
+      text-align: right;
+      margin-bottom: 8px;
+    }
+
+    #messages .bot {
+      background: #ececec;
+      padding: 6px 10px;
+      border-radius: 6px;
+      text-align: left;
+      margin-bottom: 8px;
+    }
+
+    #inputArea {
+      display: flex;
+      align-items: center;
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #sendBtn,
+    #uploadBtn {
+      padding: 8px 16px;
+      margin-left: 5px;
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #sendBtn:hover,
+    #uploadBtn:hover {
+      background: #45a049;
+    }
   </style>
 </head>
 <body>
 
+<p class="note">
+  To analyze deck drawings, select an image file and click <strong>Upload
+  Image</strong>. Uploading images does not work through this text chat.
+</p>
+
 <div id="chat">
   <h2>Decking Chatbot</h2>
   <div id="messages"></div>
+ HEAD
+  <form id="chatForm" autocomplete="off">
+    <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
+    <button id="sendBtn" type="submit">Send</button>
+  </form>
+  <div style="margin-top: 10px;">
+    <input type="file" id="imageInput" accept="image/*">
+    <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
+  </div>
+=======
   <input type="text" id="userInput" placeholder="Type your message...">
   <button id="sendBtn" onclick="sendMessage()">Send</button>
   <br><br>
@@ -31,28 +114,51 @@
 =======
   <img id="digitalImage" style="max-width:100%; display:block; margin-top:10px;" />
  main
+ origin/main
 </div>
 
 <script>
+  const form = document.getElementById('chatForm');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage();
+  });
+
   async function sendMessage() {
-    const userInput = document.getElementById("userInput").value;
+    const userInputElem = document.getElementById("userInput");
+    const userInput = userInputElem.value.trim();
     if (!userInput) return;
 
     const messagesDiv = document.getElementById("messages");
-    messagesDiv.innerHTML += `<div><strong>You:</strong> ${userInput}</div>`;
+    // Add user message bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'user';
+    userBubble.textContent = userInput;
+    messagesDiv.appendChild(userBubble);
 
-    const response = await fetch("/chatbot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userInput })
-    });
-
-    const data = await response.json();
-    const botMessage = data.response;
-
-    messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> ${botMessage}</div>`;
+    try {
+      const response = await fetch("/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userInput })
+      });
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+      const data = await response.json();
+      const botMessage = data.response;
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = botMessage;
+      messagesDiv.appendChild(botBubble);
+    } catch (err) {
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = `Error: ${err.message}`;
+      messagesDiv.appendChild(botBubble);
+    }
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    document.getElementById("userInput").value = "";
+    userInputElem.value = "";
   }
 
   async function uploadImage() {
@@ -66,13 +172,34 @@
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await fetch("/upload-measurements", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await response.json();
     const messagesDiv = document.getElementById("messages");
+ HEAD
+    try {
+      const response = await fetch("/upload-measurements", {
+        method: "POST",
+        body: formData
+      });
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+      const data = await response.json();
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      if (data.error) {
+        botBubble.textContent = `Error: ${data.error}`;
+      } else {
+        botBubble.innerHTML = `Outer Deck Area: ${data.outerDeckArea} sq ft<br>
+          Pool Area: ${data.poolArea} sq ft<br>
+          Usable Deck Area: ${data.usableDeckArea} sq ft<br>
+          Railing Footage: ${data.railingFootage} ft`;
+      }
+      messagesDiv.appendChild(botBubble);
+    } catch (err) {
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = `Error: ${err.message}`;
+      messagesDiv.appendChild(botBubble);
+=======
     if (data.error) {
       messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> Error: ${data.error}</div>`;
     } else {
@@ -91,6 +218,7 @@
       }
       result += `</div>`;
       messagesDiv.innerHTML += result;
+ origin/main
     }
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -125,6 +253,5 @@
     drawInput.value = "";
   }
 </script>
-
-</body>
-</html>
+{
+</script>

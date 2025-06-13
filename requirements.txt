@@ -1,2 +1,15 @@
+ HEAD
+flash 
+openai
+express
+multer
+tesseract.js
+cors
+dotenv
+openai
+python-dotenv
+ 
+=======
 flask
 openai
+origin/main

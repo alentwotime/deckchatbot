@@ -1,4 +1,6 @@
 require('dotenv').config();
+console.log("Loaded API Key:", process.env.OPENAI_API_KEY);
+
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
