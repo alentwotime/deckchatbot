@@ -40,13 +40,12 @@ describe('server endpoints', () => {
         wastagePercent: 10
       });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      totalShapeArea: '200.00',
-      poolArea: '78.54',
-      usableDeckArea: '121.46',
-      adjustedDeckArea: '133.61',
-      note: 'Adjusted for 10% wastage.'
-    });
+    expect(res.body.totalShapeArea).toBe('200.00');
+    expect(res.body.poolArea).toBe('78.54');
+    expect(res.body.usableDeckArea).toBe('121.46');
+    expect(res.body.adjustedDeckArea).toBe('133.61');
+    expect(res.body.note).toBe('Adjusted for 10% wastage.');
+    expect(res.body.explanation).toMatch(/composite deck/);
   });
 
   test('/upload-measurements requires file', async () => {
@@ -76,7 +75,8 @@ describe('server endpoints', () => {
     createMock.mockClear();
     const res = await request(app).post('/chatbot').send({ message: 'rectangle 5x10' });
     expect(res.status).toBe(200);
-    expect(res.body.response).toBe('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('The rectangle area is 50.00.');
+    expect(res.body.response).toContain('simple deck with no cutouts');
     expect(createMock).not.toHaveBeenCalled();
   });
 });

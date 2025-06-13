@@ -132,12 +132,19 @@ app.post('/calculate-multi-shape', (req, res) => {
   });
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
+  let explanation = 'When we calculate square footage, we only include the usable surface area of the deck.';
+  if (poolArea > 0 || shapes.length > 1) {
+    explanation += ' You\'re working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.';
+  } else {
+    explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
+  }
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
     usableDeckArea: deckArea.toFixed(2),
     adjustedDeckArea: adjustedDeckArea.toFixed(2),
-    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
+    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.',
+    explanation
   });
 });
 
@@ -183,6 +190,13 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
       : null;
 
+    let explanation = 'When we calculate square footage, we only include the usable surface area of the deck.';
+    if (poolArea > 0) {
+      explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+    } else {
+      explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
+    }
+
     const result = {
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
@@ -190,6 +204,7 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
       warning,
+      explanation,
       ocrText: text,
       rawNumbers: numbers
     };
@@ -249,7 +264,13 @@ Here’s a detailed guide for calculating square footage and other shapes:
       } else if (type === 'triangle') {
         area = triangleArea(dimensions.base, dimensions.height);
       }
-      const reply = `The ${type} area is ${area.toFixed(2)}.`;
+      let explanation = 'When we calculate square footage, we only include the usable surface area of the deck.';
+      if (/pool|cutout/i.test(message)) {
+        explanation += " You've included an inner cutout shape (like a pool or garden space). We'll subtract this from the main deck area to calculate your usable space.";
+      } else {
+        explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
+      }
+      const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
       addMessage('assistant', reply);
       return res.json({ response: reply });
     }
