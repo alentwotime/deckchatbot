@@ -28,7 +28,7 @@ describe('geometry utilities', () => {
       { x: 0, y: 0 },
       { x: 0, y: 1 },
       { x: 1, y: 1 },
-      { x: 1, y: 0 },
+      { x: 1, y: 0 }
     ];
     expect(polygonArea(pts)).toBe(1);
   });
@@ -42,4 +42,11 @@ describe('geometry utilities', () => {
     const msg = 'circle radius 4';
     expect(shapeFromMessage(msg)).toEqual({ type: 'circle', dimensions: { radius: 4 } });
   });
+
+  test('shapeFromMessage handles invalid input', () => {
+    expect(shapeFromMessage('gibberish')).toBeNull();
+  });
+
 });
+
+
