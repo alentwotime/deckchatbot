@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+ codex/enhance-ocr-and-drawing-features
+=======
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
+}
+
+ main
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
@@ -57,7 +64,15 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/enhance-ocr-and-drawing-features
   return (base * height) / 2;
+=======
+ codex/remove-merge-conflict-markers
+  return (base * height) / 2;
+=======
+  return 0.5 * base * height;
+ main
+ main
 }
 
 function polygonArea(points) {
@@ -93,6 +108,10 @@ function evaluateExpression(text) {
 }
 
 function shapeFromMessage(message) {
+ codex/enhance-ocr-and-drawing-features
+=======
+ codex/remove-merge-conflict-markers
+ main
   const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (rectMatch) {
     return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
@@ -104,6 +123,30 @@ function shapeFromMessage(message) {
   const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+ codex/enhance-ocr-and-drawing-features
+=======
+=======
+  const text = message.toLowerCase();
+  let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+  }
+  m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'circle', dimensions: { radius: parseFloat(m[1]) } };
+  }
+  m = text.match(/triangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return { type: 'triangle', dimensions: { base: parseFloat(m[1]), height: parseFloat(m[2]) } };
+  }
+  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
+  if (m) {
+    return {
+      type: 'trapezoid',
+      dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
+    };
+ main
+ main
   }
   return null;
 }
@@ -114,9 +157,15 @@ function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   if (!hasMultipleShapes && !hasCutout) {
     explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
   } else if (hasCutout) {
+ codex/enhance-ocr-and-drawing-features
     explanation += ' This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.';
   } else {
     explanation += " You're working with a composite deck. We subtract the inner areas from the outer to find your net square footage.";
+=======
+    explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+  } else {
+    explanation += " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+ main
   }
   return explanation;
 }
@@ -144,7 +193,6 @@ app.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
     const { shapes, wastagePercent = 0 } = req.body;
     let totalArea = 0;
     let poolArea = 0;
@@ -185,6 +233,7 @@ app.post(
   }
 );
 
+ codex/enhance-ocr-and-drawing-features
 app.post(
   '/upload-measurements',
   upload.single('image'),
@@ -218,6 +267,48 @@ app.post(
       const points = [];
       for (let i = 0; i < midpoint; i += 2) {
         points.push({ x: numbers[i], y: numbers[i + 1] });
+=======
+app.post('/upload-measurements', upload.single('image'), [
+  body('image').custom((_, { req }) => {
+    if (!req.file) {
+      throw new Error('Image file is required');
+    }
+    return true;
+  })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+ codex/remove-merge-conflict-markers
+    const {
+      data: { text }
+    } = await Tesseract.recognize(req.file.buffer, 'eng', {
+=======
+    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+ main
+      tessedit_pageseg_mode: 6,
+      tessedit_char_whitelist: '0123456789.',
+      logger: info => logger.debug(info)
+    });
+    const numbers = extractNumbers(text);
+    if (numbers.length < 6) {
+      return res.status(400).json({
+        error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
+      });
+    }
+    const hasPool = /pool/i.test(text);
+    const midpoint = hasPool ? numbers.length / 2 : numbers.length;
+    const outerPoints = [];
+    for (let i = 0; i < midpoint; i += 2) {
+      outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
+    }
+    const poolPoints = [];
+    if (hasPool) {
+      for (let i = midpoint; i < numbers.length; i += 2) {
+        poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+ main
       }
       const area = polygonArea(points);
       const railingFootage = calculatePerimeter(points);
@@ -230,8 +321,38 @@ app.post(
       logger.error(err.stack);
       res.status(500).json({ error: 'Error processing image.' });
     }
+ codex/enhance-ocr-and-drawing-features
   }
 );
+=======
+    const outerArea = polygonArea(outerPoints);
+    const poolAreaValue = hasPool ? polygonArea(poolPoints) : 0;
+    const deckArea = outerArea - poolAreaValue;
+    const railingFootage = calculatePerimeter(outerPoints);
+    const fasciaBoardLength = railingFootage;
+
+    const warning = deckArea > 1000 ? 'Deck area exceeds 1000 sq ft. Please verify measurements.' : null;
+
+    const explanation = deckAreaExplanation({
+      hasCutout: poolAreaValue > 0,
+      hasMultipleShapes: poolAreaValue > 0
+    });
+
+    res.json({
+      outerDeckArea: outerArea.toFixed(2),
+      poolArea: poolAreaValue.toFixed(2),
+      usableDeckArea: deckArea.toFixed(2),
+      railingFootage: railingFootage.toFixed(2),
+      fasciaBoardLength: fasciaBoardLength.toFixed(2),
+      warning,
+      explanation
+    });
+  } catch (err) {
+    logger.error(err.stack);
+    res.status(500).json({ error: 'Error processing image.' });
+  }
+});
+ main
 
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
   try {
@@ -262,6 +383,7 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       if (numbers[i + 1] !== undefined) {
         points.push({ x: numbers[i], y: numbers[i + 1] });
       }
+ codex/enhance-ocr-and-drawing-features
     }
     let area = null;
     let perimeter = null;
@@ -275,6 +397,10 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       points,
       area: area !== null ? area.toFixed(2) : null,
       perimeter: perimeter !== null ? perimeter.toFixed(2) : null
+=======
+      res.set('Content-Type', 'image/svg+xml');
+      res.send(svg);
+ main
     });
   } catch (err) {
     logger.error(err.stack);
@@ -298,19 +424,28 @@ app.post(
       if (shape) {
         const { type, dimensions } = shape;
         let area = 0;
+        let perimeter = null;
         if (type === 'rectangle') {
           area = rectangleArea(dimensions.length, dimensions.width);
+          perimeter = 2 * (dimensions.length + dimensions.width);
         } else if (type === 'circle') {
           area = circleArea(dimensions.radius);
+          perimeter = 2 * Math.PI * dimensions.radius;
         } else if (type === 'triangle') {
           area = triangleArea(dimensions.base, dimensions.height);
+        } else if (type === 'trapezoid') {
+          area = 0.5 * (dimensions.base1 + dimensions.base2) * dimensions.height;
         }
         const hasCutout = /pool|cutout/i.test(message);
         const explanation = deckAreaExplanation({
           hasCutout,
           hasMultipleShapes: hasCutout
         });
-        const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
+        let reply = `The ${type} area is ${area.toFixed(2)}.`;
+        if (perimeter !== null) {
+          reply += ` Perimeter is ${perimeter.toFixed(2)}.`;
+        }
+        reply += ` ${explanation}`;
         addMessage('assistant', reply);
         return res.json({ response: reply });
       }
