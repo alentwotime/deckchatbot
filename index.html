@@ -4,12 +4,15 @@
   <meta charset="UTF-8" />
   <title>Decking Chatbot with GPT & Photo Upload</title>
   <style>
+ codex/clean-up-merge-artifacts
+=======
     body { font-family: Arial, sans-serif; margin: 20px; }
     #chat { max-width: 600px; margin: auto; }
     #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; margin-bottom: 10px; background: #f9f9f9; }
     #userInput { width: 80%; }
     #sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
     .note { margin: 0 0 10px 0; color: #555; font-size: 0.9em; }
+ main
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -46,10 +49,13 @@
       text-align: left;
       margin-bottom: 8px;
     }
+ codex/clean-up-merge-artifacts
+=======
     #inputArea {
       display: flex;
       align-items: center;
     }
+ main
     #userInput {
       flex: 1;
       padding: 8px;
@@ -57,7 +63,8 @@
       border-radius: 4px;
     }
     #sendBtn,
-    #uploadBtn {
+    #uploadBtn,
+    #drawingBtn {
       padding: 8px 16px;
       margin-left: 5px;
       background: #4caf50;
@@ -67,17 +74,21 @@
       cursor: pointer;
     }
     #sendBtn:hover,
-    #uploadBtn:hover {
+    #uploadBtn:hover,
+    #drawingBtn:hover {
       background: #45a049;
     }
   </style>
 </head>
 <body>
-
 <p class="note">
+ codex/clean-up-merge-artifacts
+  To analyze deck drawings, select an image file and click <strong>Upload Image</strong>.
+  Uploading images does not work through this text chat.
+=======
   To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.
+ main
 </p>
-
 <div id="chat">
   <h2>Decking Chatbot</h2>
   <div id="messages"></div>
@@ -90,14 +101,52 @@
     <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
   </div>
   <div style="margin-top: 10px;">
+ codex/clean-up-merge-artifacts
+    <input type="file" id="drawingInput" accept="image/*">
+=======
     <input type="file" id="drawingInput" accept="image/*" />
+ main
     <button id="drawingBtn" type="button" onclick="uploadDrawing()">Upload Drawing</button>
   </div>
   <h3>Digitalized Drawing</h3>
   <img id="digitalImage" alt="Digitalized drawing" style="max-width:100%; display:block; margin-top:10px;" />
 </div>
-
 <script>
+ codex/clean-up-merge-artifacts
+const form = document.getElementById('chatForm');
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  sendMessage();
+});
+
+async function sendMessage() {
+  const userInputElem = document.getElementById("userInput");
+  const userInput = userInputElem.value.trim();
+  if (!userInput) return;
+
+  const messagesDiv = document.getElementById("messages");
+  const userBubble = document.createElement('div');
+  userBubble.className = 'user';
+  userBubble.textContent = userInput;
+  messagesDiv.appendChild(userBubble);
+
+  try {
+    const response = await fetch("/chatbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userInput })
+    });
+    const data = await response.json();
+    const botBubble = document.createElement('div');
+    botBubble.className = 'bot';
+    botBubble.textContent = data.response || `Error: ${data.error || 'Unable to get response.'}`;
+    messagesDiv.appendChild(botBubble);
+  } catch (err) {
+    const botBubble = document.createElement('div');
+    botBubble.className = 'bot';
+    botBubble.textContent = `Error: ${err.message}`;
+    messagesDiv.appendChild(botBubble);
+=======
   const form = document.getElementById('chatForm');
   form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -139,19 +188,48 @@
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     userInputElem.value = "";
+ main
   }
 
-  async function uploadImage() {
-    const fileInput = document.getElementById("imageInput");
-    const file = fileInput.files[0];
-    if (!file) {
-      alert("Please select an image to upload.");
-      return;
-    }
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  userInputElem.value = "";
+}
 
-    const formData = new FormData();
-    formData.append("image", file);
+async function uploadImage() {
+  const fileInput = document.getElementById("imageInput");
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("Please select an image to upload.");
+    return;
+  }
 
+ codex/clean-up-merge-artifacts
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const messagesDiv = document.getElementById("messages");
+  try {
+    const response = await fetch("/upload-measurements", {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+    const botBubble = document.createElement('div');
+    botBubble.className = 'bot';
+    if (data.error) {
+      botBubble.textContent = `Error: ${data.error}`;
+    } else {
+      botBubble.innerHTML = `Outer Deck Area: ${data.outerDeckArea} sq ft<br>
+        Pool Area: ${data.poolArea} sq ft<br>
+        Usable Deck Area: ${data.usableDeckArea} sq ft<br>
+        Railing Footage: ${data.railingFootage} ft`;
+      if (data.explanation) {
+        botBubble.innerHTML += `<br>${data.explanation}`;
+      }
+      if (data.warning) {
+        botBubble.innerHTML += `<br><em>${data.warning}</em>`;
+      }
+=======
     const messagesDiv = document.getElementById("messages");
     try {
       const response = await fetch("/upload-measurements", {
@@ -178,39 +256,50 @@
       botBubble.className = 'bot';
       botBubble.textContent = `Error: ${err.message}`;
       messagesDiv.appendChild(botBubble);
+ main
     }
-
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    fileInput.value = "";
+    messagesDiv.appendChild(botBubble);
+  } catch (err) {
+    const botBubble = document.createElement('div');
+    botBubble.className = 'bot';
+    botBubble.textContent = `Error: ${err.message}`;
+    messagesDiv.appendChild(botBubble);
   }
 
-  async function uploadDrawing() {
-    const drawInput = document.getElementById("drawingInput");
-    const file = drawInput.files[0];
-    if (!file) {
-      alert("Please select a drawing to upload.");
-      return;
-    }
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  fileInput.value = "";
+}
 
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const response = await fetch("/digitalize-drawing", {
-      method: "POST",
-      body: formData
-    });
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      document.getElementById("digitalImage").src = url;
-    } else {
-      const data = await response.json();
-      alert(data.error || "Error processing drawing.");
-    }
-
-    drawInput.value = "";
+async function uploadDrawing() {
+  const drawInput = document.getElementById("drawingInput");
+  const file = drawInput.files[0];
+  if (!file) {
+    alert("Please select a drawing to upload.");
+    return;
   }
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await fetch("/digitalize-drawing", {
+    method: "POST",
+    body: formData
+  });
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    document.getElementById("digitalImage").src = url;
+  } else {
+    const data = await response.json();
+    alert(data.error || "Error processing drawing.");
+  }
+ codex/clean-up-merge-artifacts
+
+  drawInput.value = "";
+}
+=======
+ main
 </script>
 </body>
 </html>
