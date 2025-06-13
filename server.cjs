@@ -40,7 +40,7 @@ function triangleArea(base, height) {
 // hasMultipleShapes indicates if more than one shape was supplied.
 function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   let explanation =
-    'When we calculate square footage, we only include the usable surface area of the deck.';
+    'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
   if (!hasMultipleShapes && !hasCutout) {
     explanation +=
       ' This is a simple deck with no cutouts. The entire area is considered usable.';
