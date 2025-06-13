@@ -6,25 +6,24 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     #chat { max-width: 600px; margin: auto; }
-    #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; background: #f9f9f9; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; margin-bottom: 10px; background: #f9f9f9; }
     #userInput { width: 80%; }
-#sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
-.note { margin: 0 0 10px 0; color: #555; font-size: 0.9em; }
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 20px;
-  background: linear-gradient(135deg, #a2d9ff, #f0f9ff);
-}
-#chat {
-  max-width: 600px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
+    #sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
+    .note { margin: 0 0 10px 0; color: #555; font-size: 0.9em; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #a2d9ff, #f0f9ff);
+    }
+    #chat {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
     #messages {
       border: 1px solid #ccc;
       padding: 10px;
@@ -33,7 +32,6 @@ body {
       margin-bottom: 10px;
       background: #f9f9f9;
     }
-
     #messages .user {
       background: #e1ffc7;
       padding: 6px 10px;
@@ -41,7 +39,6 @@ body {
       text-align: right;
       margin-bottom: 8px;
     }
-
     #messages .bot {
       background: #ececec;
       padding: 6px 10px;
@@ -49,19 +46,16 @@ body {
       text-align: left;
       margin-bottom: 8px;
     }
-
     #inputArea {
       display: flex;
       align-items: center;
     }
-
     #userInput {
       flex: 1;
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-
     #sendBtn,
     #uploadBtn {
       padding: 8px 16px;
@@ -72,7 +66,6 @@ body {
       border-radius: 4px;
       cursor: pointer;
     }
-
     #sendBtn:hover,
     #uploadBtn:hover {
       background: #45a049;
@@ -82,50 +75,26 @@ body {
 <body>
 
 <p class="note">
-  To analyze deck drawings, select an image file and click <strong>Upload
-  Image</strong>. Uploading images does not work through this text chat.
+  To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.
 </p>
 
 <div id="chat">
   <h2>Decking Chatbot</h2>
   <div id="messages"></div>
- HEAD
- HEAD
-=======
- ec1e610 (add new feature for deckchatbot)
   <form id="chatForm" autocomplete="off">
     <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
     <button id="sendBtn" type="submit">Send</button>
   </form>
   <div style="margin-top: 10px;">
-    <input type="file" id="imageInput" accept="image/*">
+    <input type="file" id="imageInput" accept="image/*" />
     <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
   </div>
- HEAD
-=======
-  <input type="text" id="userInput" placeholder="Type your message...">
-  <button id="sendBtn" onclick="sendMessage()">Send</button>
-  <br><br>
-  <input type="file" id="imageInput" accept="image/*">
-  <button id="uploadBtn" onclick="uploadImage()">Upload Image</button>
-  <br><br>
-  <input type="file" id="drawingInput" accept="image/*">
-  <button id="drawingBtn" onclick="uploadDrawing()">Upload Drawing</button>
-  <br>
+  <div style="margin-top: 10px;">
+    <input type="file" id="drawingInput" accept="image/*" />
+    <button id="drawingBtn" type="button" onclick="uploadDrawing()">Upload Drawing</button>
+  </div>
   <h3>Digitalized Drawing</h3>
   <img id="digitalImage" alt="Digitalized drawing" style="max-width:100%; display:block; margin-top:10px;" />
- codex/clean-merge-remnants-and-files
-=======
-=======
-  <img id="digitalImage" style="max-width:100%; display:block; margin-top:10px;" />
- main
- origin/main
- HEAD
-=======
- main
- 5ca697d8bae95aaadcd4447502cf44197ddfae22
-=======
- ec1e610 (add new feature for deckchatbot)
 </div>
 
 <script>
@@ -141,27 +110,11 @@ body {
     if (!userInput) return;
 
     const messagesDiv = document.getElementById("messages");
-    // Add user message bubble
     const userBubble = document.createElement('div');
     userBubble.className = 'user';
     userBubble.textContent = userInput;
     messagesDiv.appendChild(userBubble);
 
- codex/fix-401-authentication-error-due-to-invalid-api-key
-    const response = await fetch("/chatbot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userInput })
-    });
-
-    const data = await response.json();
-    let botMessage = data.response;
-    if (!botMessage) {
-      botMessage = `Error: ${data.error || 'Unable to get response.'}`;
-    }
-
-    messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> ${botMessage}</div>`;
-=======
     try {
       const response = await fetch("/chatbot", {
         method: "POST",
@@ -183,7 +136,7 @@ body {
       botBubble.textContent = `Error: ${err.message}`;
       messagesDiv.appendChild(botBubble);
     }
- main
+
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     userInputElem.value = "";
   }
@@ -200,10 +153,6 @@ body {
     formData.append("image", file);
 
     const messagesDiv = document.getElementById("messages");
- HEAD
- HEAD
-=======
- ec1e610 (add new feature for deckchatbot)
     try {
       const response = await fetch("/upload-measurements", {
         method: "POST",
@@ -229,35 +178,11 @@ body {
       botBubble.className = 'bot';
       botBubble.textContent = `Error: ${err.message}`;
       messagesDiv.appendChild(botBubble);
- HEAD
-=======
-    if (data.error) {
-      messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> Error: ${data.error}</div>`;
-    } else {
-      let result = `<div><strong>Chatbot:</strong> Outer Area: ${data.outerDeckArea} sq ft<br>
-        Inner Cutout Area: ${data.poolArea} sq ft<br>
-        Final Usable Deck Area: ${data.usableDeckArea} sq ft<br>
-        Railing Footage: ${data.railingFootage} ft`;
-      if (data.explanation) {
-        result += `<br>${data.explanation}`;
-      }
-      if (data.warning) {
-        result += `<br><em>${data.warning}</em>`;
-      }
-      if (data.explanation) {
-        result += `<br>${data.explanation}`;
-      }
-      result += `</div>`;
-      messagesDiv.innerHTML += result;
- origin/main
-=======
- ec1e610 (add new feature for deckchatbot)
     }
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     fileInput.value = "";
   }
- HEAD
 
   async function uploadDrawing() {
     const drawInput = document.getElementById("drawingInput");
@@ -286,8 +211,6 @@ body {
 
     drawInput.value = "";
   }
-=======
- ec1e610 (add new feature for deckchatbot)
 </script>
-{
-</script>
+</body>
+</html>
