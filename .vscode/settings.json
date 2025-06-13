@@ -1,0 +1,4 @@
+{
+    "github.copilot.chat.byok.ollamaEndpoint": "http://localhost:3000",
+    "github.copilot.chat.completionContext.typescript.mode": "on"
+}
