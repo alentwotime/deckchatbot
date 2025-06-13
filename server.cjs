@@ -1,13 +1,6 @@
 require('dotenv').config();
- codex/fix-401-authentication-error-due-to-invalid-api-key
-
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
-}
-=======
 console.log("Loaded API Key:", process.env.OPENAI_API_KEY);
 
- main
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
@@ -16,13 +9,13 @@ const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
+const http = require('http');
+const { Server } = require('socket.io');
 const OpenAI = require('openai');
- codex/enhance-bot-intelligence-and-capabilities
-const math = require("mathjs");
-=======
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
+const nlp = require('compromise');
 const { addMessage, getRecentMessages } = require('./memory');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -31,7 +24,6 @@ const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
- main
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -46,6 +38,8 @@ const logger = winston.createLogger({
 });
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 const port = 3000;
 
 app.use(cors());
@@ -68,11 +62,7 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
- codex/enhance-bot-intelligence-and-capabilities
-  return 0.5 * base * height;
-=======
   return (base * height) / 2;
- main
 }
 
 function polygonArea(points) {
@@ -97,51 +87,6 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
- codex/enhance-bot-intelligence-and-capabilities
-
-function evaluateExpression(text) {
-  try {
-    const result = math.evaluate(text);
-    if (typeof result !== 'function' && result !== undefined) {
-      return result.toString();
-    }
-  } catch (e) {}
-  return null;
-}
-
-function shapeFromMessage(msg) {
-  const text = msg.toLowerCase();
-  let m;
-  m = text.match(/rectangle.*?(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
-  if (m) {
-    const l = parseFloat(m[1]);
-    const w = parseFloat(m[2]);
-    const area = rectangleArea(l, w).toFixed(2);
-    const peri = (2 * (l + w)).toFixed(2);
-    return `Rectangle area: ${area} sq ft, perimeter: ${peri} ft`;
-  }
-  m = text.match(/triangle.*?base\s*(\d+(?:\.\d+)?)\D*height\s*(\d+(?:\.\d+)?)/);
-  if (m) {
-    const b = parseFloat(m[1]);
-    const h = parseFloat(m[2]);
-    const area = (0.5 * b * h).toFixed(2);
-    return `Triangle area: ${area} sq ft`;
-  }
-  m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
-  if (m) {
-    const r = parseFloat(m[1]);
-    const area = (Math.PI * r * r).toFixed(2);
-    const circ = (2 * Math.PI * r).toFixed(2);
-    return `Circle area: ${area} sq ft, circumference: ${circ} ft`;
-  }
-  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
-  if (m) {
-    const b1 = parseFloat(m[1]);
-    const b2 = parseFloat(m[2]);
-    const h = parseFloat(m[3]);
-    const area = (0.5 * (b1 + b2) * h).toFixed(2);
-    return `Trapezoid area: ${area} sq ft`;
-=======
 function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   let explanation =
     'When we calculate square footage, we only include the usable surface area of the deck. For example, if a pool or other structure cuts into the deck, we subtract that inner area from the total.';
@@ -156,73 +101,39 @@ function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
 }
 
 function shapeFromMessage(message) {
-  const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+  const numUnit = '(\\d+(?:\\.\\d+)?)\\s*(?:ft|feet|in|inches|m|meters)?';
+  const rectRegex = new RegExp(`rectangle\\s*${numUnit}\\s*(?:x|by|\\*)\\s*${numUnit}`, 'i');
+  const rectMatch = rectRegex.exec(message);
   if (rectMatch) {
     return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
   }
-  const circleMatch = /circle\s*radius\s*(\d+(?:\.\d+)?)/i.exec(message);
+
+  const circleRegex = new RegExp(`circle\\s*radius\\s*${numUnit}`, 'i');
+  const circleMatch = circleRegex.exec(message);
   if (circleMatch) {
     return { type: 'circle', dimensions: { radius: parseFloat(circleMatch[1]) } };
   }
-  const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
+
+  const triRegex = new RegExp(`triangle\\s*${numUnit}\\s*(?:x|by|\\*)\\s*${numUnit}`, 'i');
+  const triMatch = triRegex.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
- main
+  }
+
+  const doc = nlp(message);
+  const numbers = doc.numbers().toNumber().out('array');
+  if (/rectangle/i.test(message) && numbers.length >= 2) {
+    return { type: 'rectangle', dimensions: { length: numbers[0], width: numbers[1] } };
+  }
+  if (/circle/i.test(message) && numbers.length >= 1) {
+    return { type: 'circle', dimensions: { radius: numbers[0] } };
+  }
+  if (/triangle/i.test(message) && numbers.length >= 2) {
+    return { type: 'triangle', dimensions: { base: numbers[0], height: numbers[1] } };
   }
   return null;
 }
 
- codex/enhance-bot-intelligence-and-capabilities
-app.use(express.static(path.join(__dirname)));
-
-// Multi-shape calculation endpoint
-app.post('/calculate-multi-shape', (req, res) => {
-  const { shapes, wastagePercent = 0 } = req.body;
-  if (!shapes || !Array.isArray(shapes) || shapes.length === 0) {
-    return res.status(400).json({ error: 'Please provide an array of shapes.' });
-  }
-
-  let totalArea = 0;
-  let poolArea = 0;
-
-  shapes.forEach(shape => {
-    const { type, dimensions, isPool } = shape;
-    let area = 0;
-    if (type === 'rectangle') {
-      area = rectangleArea(dimensions.length, dimensions.width);
-    } else if (type === 'circle') {
-      area = circleArea(dimensions.radius);
-    } else if (type === 'triangle') {
-      area = triangleArea(dimensions.base, dimensions.height);
-    } else if (type === 'polygon') {
-      area = polygonArea(dimensions.points);
-    } else {
-      return res.status(400).json({ error: `Unsupported shape type: ${type}` });
-    }
-
-    if (isPool) {
-      poolArea += area;
-    } else {
-      totalArea += area;
-    }
-  });
-
-  const deckArea = totalArea - poolArea;
-  const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
-
-  res.json({
-    totalShapeArea: totalArea.toFixed(2),
-    poolArea: poolArea.toFixed(2),
-    usableDeckArea: deckArea.toFixed(2),
-    adjustedDeckArea: adjustedDeckArea.toFixed(2),
-    note: wastagePercent ? `Adjusted for ${wastagePercent}% wastage.` : 'No wastage adjustment.'
-  });
-});
-
-// OCR Endpoint
-app.post('/upload-measurements', upload.single('image'), async (req, res) => {
-  try {
-=======
 function extractNumbers(rawText) {
   if (!rawText) return [];
   const cleaned = rawText.replace(/["'″’]/g, '');
@@ -289,7 +200,6 @@ app.post(
 
 app.post('/upload-measurements', upload.single('image'), [
   body('image').custom((_, { req }) => {
- main
     if (!req.file) {
       throw new Error('Image file is required');
     }
@@ -356,44 +266,6 @@ app.post('/upload-measurements', upload.single('image'), [
   }
 });
 
- codex/enhance-bot-intelligence-and-capabilities
-// Chatbot Endpoint
-app.post('/chatbot', async (req, res) => {
-  const { message } = req.body;
-
-  // Try local calculations first
-  const shapeAnswer = shapeFromMessage(message);
-  if (shapeAnswer) {
-    return res.json({ response: shapeAnswer });
-  }
-  const mathAnswer = evaluateExpression(message);
-  if (mathAnswer !== null) {
-    return res.json({ response: `Result: ${mathAnswer}` });
-  }
-
-  const calculationGuide = `
-Here’s a detailed guide for calculating square footage and other shapes:
-1. Rectangle: L × W
-2. Triangle: (1/2) × Base × Height
-3. Circle: π × Radius²
-4. Half Circle: (1/2) π × Radius²
-5. Quarter Circle: (1/4) π × Radius²
-6. Trapezoid: (1/2) × (Base1 + Base2) × Height
-7. Complex Shapes: sum of all simpler shapes’ areas.
-8. Fascia Board: total perimeter length (excluding steps).
-`;
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a smart math bot with built-in solving capabilities using this calculation guide:\n${calculationGuide}\nAlways form follow-up questions if needed to clarify user data.`
-        },
-        { role: 'user', content: message }
-      ]
-=======
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -418,7 +290,6 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       }
       res.set('Content-Type', 'image/svg+xml');
       res.send(svg);
- main
     });
   } catch (err) {
     logger.error(err.stack);
@@ -486,8 +357,48 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
 });
 
+io.on('connection', socket => {
+  socket.on('chat message', async msg => {
+    try {
+      const shape = shapeFromMessage(msg);
+      if (shape) {
+        const { type, dimensions } = shape;
+        let area = 0;
+        if (type === 'rectangle') {
+          area = rectangleArea(dimensions.length, dimensions.width);
+        } else if (type === 'circle') {
+          area = circleArea(dimensions.radius);
+        } else if (type === 'triangle') {
+          area = triangleArea(dimensions.base, dimensions.height);
+        }
+        const reply = `The ${type} area is ${area.toFixed(2)}`;
+        socket.emit('response', reply);
+        socket.emit('end');
+        return;
+      }
+
+      const history = getRecentMessages();
+      const stream = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        stream: true,
+        messages: [
+          ...history.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: msg }
+        ]
+      });
+      for await (const part of stream) {
+        const content = part.choices[0].delta?.content;
+        if (content) socket.emit('response', content);
+      }
+      socket.emit('end');
+    } catch (err) {
+      socket.emit('error', err.message);
+    }
+  });
+});
+
 if (require.main === module) {
-  app.listen(port, () => {
+  server.listen(port, () => {
     logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
   });
 }
