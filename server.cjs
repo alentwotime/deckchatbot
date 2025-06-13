@@ -35,10 +35,13 @@ function triangleArea(base, height) {
   return (base * height) / 2;
 }
 
-function deckAreaExplanation({ hasCutout, multipleShapes }) {
+// Build a short explanation describing how deck area is calculated.
+// hasCutout denotes whether any inner shapes (like a pool) were provided.
+// hasMultipleShapes indicates if more than one shape was supplied.
+function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   let explanation =
     'When we calculate square footage, we only include the usable surface area of the deck.';
-  if (!multipleShapes && !hasCutout) {
+  if (!hasMultipleShapes && !hasCutout) {
     explanation +=
       ' This is a simple deck with no cutouts. The entire area is considered usable.';
   } else if (hasCutout) {
@@ -151,7 +154,7 @@ app.post('/calculate-multi-shape', (req, res) => {
   const hasCutout = shapes.some(s => s.isPool);
   const explanation = deckAreaExplanation({
     hasCutout,
-    multipleShapes: shapes.length > 1
+    hasMultipleShapes: shapes.length > 1
   });
   res.json({
     totalShapeArea: totalArea.toFixed(2),
@@ -207,7 +210,7 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
 
     const explanation = deckAreaExplanation({
       hasCutout: poolArea > 0,
-      multipleShapes: poolArea > 0
+      hasMultipleShapes: poolArea > 0
     });
 
     const result = {
@@ -280,7 +283,7 @@ Here’s a detailed guide for calculating square footage and other shapes:
       const hasCutout = /pool|cutout/i.test(message);
       const explanation = deckAreaExplanation({
         hasCutout,
-        multipleShapes: hasCutout
+        hasMultipleShapes: hasCutout
       });
       const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
       addMessage('assistant', reply);
