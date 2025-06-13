@@ -107,6 +107,7 @@ describe('server edge cases', () => {
       .attach('image', Buffer.from('img'), 'draw.png');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('image/svg+xml');
+    expect(res.text).toBe('<svg/>');
   });
 
   test('/digitalize-drawing handles error', async () => {
@@ -125,3 +126,4 @@ describe('server edge cases', () => {
     expect(msgs.some(m => /message is required/.test(m))).toBe(true);
   });
 });
+
