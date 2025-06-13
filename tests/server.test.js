@@ -1,6 +1,18 @@
 const request = require('supertest');
 
 jest.mock('openai', () => {
+ codex/install-express-validator-and-apply-validation
+  return jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: jest.fn().mockResolvedValue({ choices: [{ message: { content: 'mocked' } }] })
+      }
+    }
+  }));
+});
+
+const { app } = require('../server.cjs');
+=======
   const createMock = jest.fn().mockResolvedValue({ choices: [{ message: { content: 'mocked' } }] });
   const MockOpenAI = jest.fn().mockImplementation(() => ({
     chat: {
@@ -27,6 +39,7 @@ beforeEach(() => {
 afterAll(() => {
   if (fs.existsSync(memoryDb)) fs.unlinkSync(memoryDb);
 });
+ main
 
 describe('server endpoints', () => {
   test('/calculate-multi-shape', async () => {
@@ -45,14 +58,21 @@ describe('server endpoints', () => {
       poolArea: '78.54',
       usableDeckArea: '121.46',
       adjustedDeckArea: '133.61',
+ codex/install-express-validator-and-apply-validation
+      note: 'Adjusted for 10% wastage.'
+=======
       note: 'Adjusted for 10% wastage.',
       explanation: expect.stringContaining('usable surface')
+ main
     });
   });
 
   test('/upload-measurements requires file', async () => {
     const res = await request(app).post('/upload-measurements');
     expect(res.status).toBe(400);
+ codex/install-express-validator-and-apply-validation
+    expect(res.body.errors[0].msg).toMatch(/Image file is required/);
+=======
     expect(res.body.error).toMatch(/Please upload an image/);
   });
 
@@ -60,12 +80,15 @@ describe('server endpoints', () => {
     const res = await request(app).post('/digitalize-drawing');
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/Please upload an image/);
+ main
   });
 
   test('/chatbot', async () => {
     const res = await request(app).post('/chatbot').send({ message: 'hello' });
     expect(res.status).toBe(200);
     expect(res.body.response).toBe('mocked');
+ codex/install-express-validator-and-apply-validation
+=======
     const history = memory.getRecentMessages();
     expect(history.slice(-2)).toEqual([
       expect.objectContaining({ role: 'user', content: 'hello' }),
@@ -80,5 +103,6 @@ describe('server endpoints', () => {
     expect(res.body.response).toContain('The rectangle area is 50.00.');
     expect(res.body.response).toContain('simple deck with no cutouts');
     expect(createMock).not.toHaveBeenCalled();
+ main
   });
 });
