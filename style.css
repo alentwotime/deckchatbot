@@ -40,6 +40,14 @@ body {
   text-align: left;
 }
 
+ codex/improve-html-design-appeal
+#digitalWrapper {
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+=======
+ main
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }

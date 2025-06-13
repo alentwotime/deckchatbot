@@ -89,7 +89,12 @@ async function uploadDrawing() {
   });
 
   if (response.ok) {
+ codex/improve-html-design-appeal
+    const svgText = await response.text();
+    const blob = new Blob([svgText], { type: 'image/svg+xml' });
+=======
     const blob = await response.blob();
+ main
     const url = URL.createObjectURL(blob);
     document.getElementById('digitalImage').src = url;
   } else {
