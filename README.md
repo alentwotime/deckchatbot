@@ -12,11 +12,18 @@ AI-powered chatbot for deck sales and quoting automation.
    ```bash
    npm start
    ```
+ hw8fkw-codex/suggest-improvements-for-bot-logic
+=======
  codex/suggest-improvements-for-bot-logic
+ main
    The app will be available at `http://localhost:3000` or the port specified by `PORT`.
 
 ## Logging
 Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust `LOG_LEVEL` in `.env` to control verbosity.
+ hw8fkw-codex/suggest-improvements-for-bot-logic
+
+## Environment Variables
+=======
 
 ## Environment Variables
 =======
@@ -27,6 +34,7 @@ Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust the `LO
 
 ## Environment Variables
 Copy `.env.example` to `.env` and set your keys:
+ main
  main
 ```
 OPENAI_API_KEY=your-api-key
@@ -42,16 +50,11 @@ npm start
 ## API Endpoints
 
 ### `POST /calculate-multi-shape`
- codex/suggest-improvements-for-bot-logic
-Calculate the area of multiple shapes.
+ hw8fkw-codex/suggest-improvements-for-bot-logic
 =======
-Calculate the area of multiple shapes. Example request:
-```bash
-curl -X POST http://localhost:3000/calculate-multi-shape \
-  -H "Content-Type: application/json" \
-  -d '{"shapes":[{"type":"rectangle","dimensions":{"length":10,"width":20}},{"type":"polygon","dimensions":{"points":[{"x":0,"y":0},{"x":4,"y":0},{"x":4,"y":3}] }},{"type":"circle","dimensions":{"radius":5},"isPool":true}],"wastagePercent":10}'
-```
+ codex/suggest-improvements-for-bot-logic
  main
+Calculate the area of multiple shapes.
 
 ### `POST /upload-measurements`
 Upload an image containing measurements. OCR is used to extract points and compute deck area.
@@ -67,9 +70,13 @@ Install dependencies and run the test suite with:
 ```bash
 npm test
 ```
+ hw8fkw-codex/suggest-improvements-for-bot-logic
+
+=======
  codex/suggest-improvements-for-bot-logic
 
 =======
+ main
  main
 The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.
 
