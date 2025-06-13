@@ -1,6 +1,13 @@
 require('dotenv').config();
+ codex/fix-401-authentication-error-due-to-invalid-api-key
+
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
+}
+=======
 console.log("Loaded API Key:", process.env.OPENAI_API_KEY);
 
+ main
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
@@ -10,7 +17,7 @@ const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
 const OpenAI = require('openai');
-<<<<<<< codex/enhance-bot-intelligence-and-capabilities
+ codex/enhance-bot-intelligence-and-capabilities
 const math = require("mathjs");
 =======
 const Jimp = require('jimp');
@@ -24,7 +31,7 @@ const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
->>>>>>> main
+ main
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -61,11 +68,11 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
-<<<<<<< codex/enhance-bot-intelligence-and-capabilities
+ codex/enhance-bot-intelligence-and-capabilities
   return 0.5 * base * height;
 =======
   return (base * height) / 2;
->>>>>>> main
+ main
 }
 
 function polygonArea(points) {
@@ -90,7 +97,7 @@ function calculatePerimeter(points) {
   return perimeter;
 }
 
-<<<<<<< codex/enhance-bot-intelligence-and-capabilities
+ codex/enhance-bot-intelligence-and-capabilities
 
 function evaluateExpression(text) {
   try {
@@ -160,12 +167,12 @@ function shapeFromMessage(message) {
   const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
->>>>>>> main
+ main
   }
   return null;
 }
 
-<<<<<<< codex/enhance-bot-intelligence-and-capabilities
+ codex/enhance-bot-intelligence-and-capabilities
 app.use(express.static(path.join(__dirname)));
 
 // Multi-shape calculation endpoint
@@ -282,7 +289,7 @@ app.post(
 
 app.post('/upload-measurements', upload.single('image'), [
   body('image').custom((_, { req }) => {
->>>>>>> main
+ main
     if (!req.file) {
       throw new Error('Image file is required');
     }
@@ -349,7 +356,7 @@ app.post('/upload-measurements', upload.single('image'), [
   }
 });
 
-<<<<<<< codex/enhance-bot-intelligence-and-capabilities
+ codex/enhance-bot-intelligence-and-capabilities
 // Chatbot Endpoint
 app.post('/chatbot', async (req, res) => {
   const { message } = req.body;
@@ -411,7 +418,7 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       }
       res.set('Content-Type', 'image/svg+xml');
       res.send(svg);
->>>>>>> main
+ main
     });
   } catch (err) {
     logger.error(err.stack);

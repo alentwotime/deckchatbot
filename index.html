@@ -125,7 +125,7 @@ body {
  main
  5ca697d8bae95aaadcd4447502cf44197ddfae22
 =======
->>>>>>> ec1e610 (add new feature for deckchatbot)
+ ec1e610 (add new feature for deckchatbot)
 </div>
 
 <script>
@@ -147,6 +147,21 @@ body {
     userBubble.textContent = userInput;
     messagesDiv.appendChild(userBubble);
 
+ codex/fix-401-authentication-error-due-to-invalid-api-key
+    const response = await fetch("/chatbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userInput })
+    });
+
+    const data = await response.json();
+    let botMessage = data.response;
+    if (!botMessage) {
+      botMessage = `Error: ${data.error || 'Unable to get response.'}`;
+    }
+
+    messagesDiv.innerHTML += `<div><strong>Chatbot:</strong> ${botMessage}</div>`;
+=======
     try {
       const response = await fetch("/chatbot", {
         method: "POST",
@@ -168,6 +183,7 @@ body {
       botBubble.textContent = `Error: ${err.message}`;
       messagesDiv.appendChild(botBubble);
     }
+ main
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     userInputElem.value = "";
   }

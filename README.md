@@ -1,6 +1,25 @@
 # deckchatbot
 AI-powered chatbot for deck sales and quoting automation.
 
+ codex/fix-401-authentication-error-due-to-invalid-api-key
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create a `.env` file in the project root with your OpenAI API key:
+   ```bash
+   cp .env.example .env
+   # then edit .env and set OPENAI_API_KEY
+   ```
+3. Start the server:
+   ```bash
+   npm start
+   ```
+
+The app will be available at `http://localhost:3000`.
+=======
  codex/clean-merge-remnants-and-files
 ## Logging
 
@@ -76,3 +95,4 @@ npm test
 ```
 
 The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.
+ main
