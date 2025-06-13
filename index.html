@@ -81,6 +81,9 @@
       if (data.warning) {
         result += `<br><em>${data.warning}</em>`;
       }
+      if (data.explanation) {
+        result += `<br>${data.explanation}`;
+      }
       result += `</div>`;
       messagesDiv.innerHTML += result;
     }

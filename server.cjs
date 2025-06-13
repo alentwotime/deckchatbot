@@ -152,10 +152,11 @@ app.post('/calculate-multi-shape', (req, res) => {
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
   const hasCutout = shapes.some(s => s.isPool);
-  const explanation = deckAreaExplanation({
-    hasCutout,
-    hasMultipleShapes: shapes.length > 1
-  });
+const explanation = deckAreaExplanation({
+  hasCutout,
+  hasMultipleShapes: shapes.length > 1
+});
+
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
@@ -220,17 +221,20 @@ app.post('/upload-measurements', upload.single('image'), async (req, res) => {
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
       warning,
+ codex/update-bot-response-for-deck-area-calculations
       explanation,
+=======
+    const result = {
+      explanation: hasPool
+        ? 'When we calculate square footage, we only include the usable surface area of the deck. This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.'
+        : 'When we calculate square footage, we only include the usable surface area of the deck. This is a simple deck with no cutouts. The entire area is considered usable.',
+ main
       ocrText: text,
       rawNumbers: numbers
     };
-    addMeasurement(result);
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error processing image.' });
-  }
-});
+    const result = {
+  explanation,
+
 
 // Digitalize drawing endpoint
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
