@@ -1,13 +1,10 @@
 # deckchatbot
 AI-powered chatbot for deck sales and quoting automation.
 
- codex/add-and-configure-logging-middleware
 ## Logging
 
 Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust the
 `LOG_LEVEL` environment variable (e.g. `info`, `debug`) to control verbosity.
-=======
-codex/install-express-validator-and-apply-validation
 ## Setup
 
 ```bash
@@ -53,8 +50,6 @@ curl -X POST http://localhost:3000/chatbot \
   -d '{"message":"How do I calculate deck area?"}'
 ```
 
-=======
- main
 ## Running Tests
 
 Install dependencies and run the test suite with:
@@ -65,4 +60,3 @@ npm test
 ```
 
 The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.
- main
