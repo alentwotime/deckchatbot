@@ -132,10 +132,19 @@ app.post('/calculate-multi-shape', (req, res) => {
   });
   const deckArea = totalArea - poolArea;
   const adjustedDeckArea = deckArea * (1 + wastagePercent / 100);
-  const explanation =
-    poolArea > 0 || shapes.length > 1
-      ? 'When we calculate square footage, we only include the usable surface area of the deck. You\'re working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.'
-      : 'When we calculate square footage, we only include the usable surface area of the deck. This is a simple deck with no cutouts. The entire area is considered usable.';
+  const hasCutout = shapes.some(s => s.isPool);
+  let explanation =
+    'When we calculate square footage, we only include the usable surface area of the deck.';
+  if (shapes.length === 1 && !hasCutout) {
+    explanation +=
+      ' This is a simple deck with no cutouts. The entire area is considered usable.';
+  } else if (hasCutout) {
+    explanation +=
+      ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
+  } else {
+    explanation +=
+      " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+  }
   res.json({
     totalShapeArea: totalArea.toFixed(2),
     poolArea: poolArea.toFixed(2),
