@@ -1,4 +1,5 @@
 # deckchatbot
+
 AI-powered chatbot for deck sales and quoting automation.
 
 ## Setup
@@ -11,6 +12,14 @@ AI-powered chatbot for deck sales and quoting automation.
    ```bash
    npm start
    ```
+ codex/enhance-ocr-and-drawing-features
+
+The app runs at `http://localhost:3000`.
+
+## Logging
+
+Winston logs requests and errors to `logs/app.log` and to STDOUT. Adjust `LOG_LEVEL` in `.env` to control verbosity.
+=======
 The app will be available at `http://localhost:3000`.
 
 ## Logging
@@ -22,36 +31,43 @@ Copy `.env.example` to `.env` and set your keys:
 OPENAI_API_KEY=your-api-key
 LOG_LEVEL=info
 ```
+ main
 
 ## API Endpoints
 
 ### `POST /calculate-multi-shape`
+ codex/enhance-ocr-and-drawing-features
+Calculate the area of multiple shapes.
+=======
 Calculate the area of multiple shapes. Example request:
 ```bash
 curl -X POST http://localhost:3000/calculate-multi-shape \
   -H "Content-Type: application/json" \
   -d '{"shapes":[{"type":"rectangle","dimensions":{"length":10,"width":20}},{"type":"polygon","dimensions":{"points":[{"x":0,"y":0},{"x":4,"y":0},{"x":4,"y":3}] }},{"type":"circle","dimensions":{"radius":5},"isPool":true}],"wastagePercent":10}'
 ```
+ main
 
 ### `POST /upload-measurements`
-Upload an image for OCR calculation:
-```bash
-curl -X POST http://localhost:3000/upload-measurements \
-  -F image=@/path/to/photo.jpg
-```
+Upload an image containing measurements. OCR is used to extract points and compute deck area.
 
+### `POST /digitalize-drawing`
+Upload a photo of a hand-drawn deck. The image is vectorized and OCR is run to detect coordinate pairs. The response includes an SVG along with any detected points and calculated area.
+
+ codex/enhance-ocr-and-drawing-features
 ### `POST /chatbot`
-Ask the chatbot a question:
-```bash
-curl -X POST http://localhost:3000/chatbot \
-  -H "Content-Type: application/json" \
-  -d '{"message":"How do I calculate deck area?"}'
-```
+General chat endpoint.
 
+## Testing
+
+Run the test suite with:
+=======
 ## Running Tests
 Install dependencies and run the test suite with:
+ main
 ```bash
-npm install
 npm test
 ```
+ codex/enhance-ocr-and-drawing-features
+=======
 The tests use Jest and Supertest to verify the geometry helpers and Express endpoints.
+ main

@@ -1,9 +1,12 @@
 require('dotenv').config();
 
+ codex/enhance-ocr-and-drawing-features
+=======
 if (!process.env.OPENAI_API_KEY) {
   console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
 
+ main
 const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
@@ -19,7 +22,7 @@ const potrace = require('potrace');
 const os = require('os');
 const { addMessage, getRecentMessages } = require('./memory');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
 const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
@@ -61,10 +64,14 @@ function circleArea(radius) {
 }
 
 function triangleArea(base, height) {
+ codex/enhance-ocr-and-drawing-features
+  return (base * height) / 2;
+=======
  codex/remove-merge-conflict-markers
   return (base * height) / 2;
 =======
   return 0.5 * base * height;
+ main
  main
 }
 
@@ -85,7 +92,7 @@ function calculatePerimeter(points) {
   for (let i = 0; i < n; i++) {
     const { x: x1, y: y1 } = points[i];
     const { x: x2, y: y2 } = points[(i + 1) % n];
-    perimeter += Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    perimeter += Math.hypot(x2 - x1, y2 - y1);
   }
   return perimeter;
 }
@@ -96,12 +103,15 @@ function evaluateExpression(text) {
     if (typeof result !== 'function' && result !== undefined) {
       return result.toString();
     }
-  } catch (e) {}
+  } catch (_) {}
   return null;
 }
 
 function shapeFromMessage(message) {
+ codex/enhance-ocr-and-drawing-features
+=======
  codex/remove-merge-conflict-markers
+ main
   const rectMatch = /rectangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (rectMatch) {
     return { type: 'rectangle', dimensions: { length: parseFloat(rectMatch[1]), width: parseFloat(rectMatch[2]) } };
@@ -113,6 +123,8 @@ function shapeFromMessage(message) {
   const triMatch = /triangle\s*(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/i.exec(message);
   if (triMatch) {
     return { type: 'triangle', dimensions: { base: parseFloat(triMatch[1]), height: parseFloat(triMatch[2]) } };
+ codex/enhance-ocr-and-drawing-features
+=======
 =======
   const text = message.toLowerCase();
   let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
@@ -134,6 +146,7 @@ function shapeFromMessage(message) {
       dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
     };
  main
+ main
   }
   return null;
 }
@@ -144,9 +157,15 @@ function deckAreaExplanation({ hasCutout, hasMultipleShapes }) {
   if (!hasMultipleShapes && !hasCutout) {
     explanation += ' This is a simple deck with no cutouts. The entire area is considered usable.';
   } else if (hasCutout) {
+ codex/enhance-ocr-and-drawing-features
+    explanation += ' This deck has a cutout — we subtract the inner shape from the total area to get the usable surface.';
+  } else {
+    explanation += " You're working with a composite deck. We subtract the inner areas from the outer to find your net square footage.";
+=======
     explanation += ' This deck has a cutout — we subtract the inner shape (like a pool or opening) from the total area to get the usable surface.';
   } else {
     explanation += " You're working with a composite deck: a larger base shape with one or more cutouts. We subtract the inner areas from the outer to find your net square footage.";
+ main
   }
   return explanation;
 }
@@ -214,6 +233,41 @@ app.post(
   }
 );
 
+ codex/enhance-ocr-and-drawing-features
+app.post(
+  '/upload-measurements',
+  upload.single('image'),
+  [
+    body('image').custom((_, { req }) => {
+      if (!req.file) {
+        throw new Error('Image file is required');
+      }
+      return true;
+    })
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+        tessedit_pageseg_mode: 6,
+        tessedit_char_whitelist: '0123456789.',
+        logger: info => logger.debug(info)
+      });
+      logger.debug(`OCR Output: ${text}`);
+      const numbers = extractNumbers(text);
+      if (numbers.length < 6) {
+        return res.status(400).json({
+          error: 'Not enough numbers detected. Please ensure your measurements are clearly labeled and the photo is clear.'
+        });
+      }
+      const midpoint = numbers.length;
+      const points = [];
+      for (let i = 0; i < midpoint; i += 2) {
+        points.push({ x: numbers[i], y: numbers[i + 1] });
+=======
 app.post('/upload-measurements', upload.single('image'), [
   body('image').custom((_, { req }) => {
     if (!req.file) {
@@ -254,8 +308,23 @@ app.post('/upload-measurements', upload.single('image'), [
     if (hasPool) {
       for (let i = midpoint; i < numbers.length; i += 2) {
         poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+ main
       }
+      const area = polygonArea(points);
+      const railingFootage = calculatePerimeter(points);
+      res.json({
+        usableDeckArea: area.toFixed(2),
+        railingFootage: railingFootage.toFixed(2),
+        points
+      });
+    } catch (err) {
+      logger.error(err.stack);
+      res.status(500).json({ error: 'Error processing image.' });
     }
+ codex/enhance-ocr-and-drawing-features
+  }
+);
+=======
     const outerArea = polygonArea(outerPoints);
     const poolAreaValue = hasPool ? polygonArea(poolPoints) : 0;
     const deckArea = outerArea - poolAreaValue;
@@ -283,6 +352,7 @@ app.post('/upload-measurements', upload.single('image'), [
     res.status(500).json({ error: 'Error processing image.' });
   }
 });
+ main
 
 app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
   try {
@@ -291,23 +361,46 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
     }
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
-
-    const buffer = await new Promise((resolve, reject) => {
-      img.getBuffer('image/png', (err, buf) => {
-        if (err) return reject(err);
-        resolve(buf);
-      });
-    });
+    const buffer = await img.getBufferAsync('image/png');
     const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
     await fs.promises.writeFile(tmpPath, buffer);
-    potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, svg) => {
-      fs.unlink(tmpPath, () => {});
-      if (err) {
-        logger.error(err.stack);
-        return res.status(500).json({ error: 'Error digitalizing drawing.' });
+    const svg = await new Promise((resolve, reject) => {
+      potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, svg) => {
+        fs.unlink(tmpPath, () => {});
+        if (err) return reject(err);
+        resolve(svg);
+      });
+    });
+
+    const { data: { text } } = await Tesseract.recognize(buffer, 'eng', {
+      tessedit_pageseg_mode: 6,
+      tessedit_char_whitelist: '0123456789.',
+      logger: info => logger.debug(info)
+    });
+    const numbers = extractNumbers(text);
+    const points = [];
+    for (let i = 0; i < numbers.length; i += 2) {
+      if (numbers[i + 1] !== undefined) {
+        points.push({ x: numbers[i], y: numbers[i + 1] });
       }
+ codex/enhance-ocr-and-drawing-features
+    }
+    let area = null;
+    let perimeter = null;
+    if (points.length >= 3) {
+      area = polygonArea(points);
+      perimeter = calculatePerimeter(points);
+    }
+
+    res.json({
+      svg,
+      points,
+      area: area !== null ? area.toFixed(2) : null,
+      perimeter: perimeter !== null ? perimeter.toFixed(2) : null
+=======
       res.set('Content-Type', 'image/svg+xml');
       res.send(svg);
+ main
     });
   } catch (err) {
     logger.error(err.stack);
