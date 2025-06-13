@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <title>Decking Chatbot with GPT & Photo Upload</title>
   <style>
+ codex/clean-up-merge-artifacts
+=======
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #chat { max-width: 600px; margin: auto; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; margin-bottom: 10px; background: #f9f9f9; }
+    #userInput { width: 80%; }
+    #sendBtn, #uploadBtn { padding: 5px 10px; margin-left: 5px; }
+    .note { margin: 0 0 10px 0; color: #555; font-size: 0.9em; }
+ main
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -40,6 +49,13 @@
       text-align: left;
       margin-bottom: 8px;
     }
+ codex/clean-up-merge-artifacts
+=======
+    #inputArea {
+      display: flex;
+      align-items: center;
+    }
+ main
     #userInput {
       flex: 1;
       padding: 8px;
@@ -66,8 +82,12 @@
 </head>
 <body>
 <p class="note">
+ codex/clean-up-merge-artifacts
   To analyze deck drawings, select an image file and click <strong>Upload Image</strong>.
   Uploading images does not work through this text chat.
+=======
+  To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.
+ main
 </p>
 <div id="chat">
   <h2>Decking Chatbot</h2>
@@ -77,17 +97,22 @@
     <button id="sendBtn" type="submit">Send</button>
   </form>
   <div style="margin-top: 10px;">
-    <input type="file" id="imageInput" accept="image/*">
+    <input type="file" id="imageInput" accept="image/*" />
     <button id="uploadBtn" type="button" onclick="uploadImage()">Upload Image</button>
   </div>
   <div style="margin-top: 10px;">
+ codex/clean-up-merge-artifacts
     <input type="file" id="drawingInput" accept="image/*">
+=======
+    <input type="file" id="drawingInput" accept="image/*" />
+ main
     <button id="drawingBtn" type="button" onclick="uploadDrawing()">Upload Drawing</button>
   </div>
   <h3>Digitalized Drawing</h3>
   <img id="digitalImage" alt="Digitalized drawing" style="max-width:100%; display:block; margin-top:10px;" />
 </div>
 <script>
+ codex/clean-up-merge-artifacts
 const form = document.getElementById('chatForm');
 form.addEventListener('submit', function(e) {
   e.preventDefault();
@@ -121,6 +146,49 @@ async function sendMessage() {
     botBubble.className = 'bot';
     botBubble.textContent = `Error: ${err.message}`;
     messagesDiv.appendChild(botBubble);
+=======
+  const form = document.getElementById('chatForm');
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage();
+  });
+
+  async function sendMessage() {
+    const userInputElem = document.getElementById("userInput");
+    const userInput = userInputElem.value.trim();
+    if (!userInput) return;
+
+    const messagesDiv = document.getElementById("messages");
+    const userBubble = document.createElement('div');
+    userBubble.className = 'user';
+    userBubble.textContent = userInput;
+    messagesDiv.appendChild(userBubble);
+
+    try {
+      const response = await fetch("/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userInput })
+      });
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+      const data = await response.json();
+      const botMessage = data.response;
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = botMessage;
+      messagesDiv.appendChild(botBubble);
+    } catch (err) {
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = `Error: ${err.message}`;
+      messagesDiv.appendChild(botBubble);
+    }
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    userInputElem.value = "";
+ main
   }
 
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -135,6 +203,7 @@ async function uploadImage() {
     return;
   }
 
+ codex/clean-up-merge-artifacts
   const formData = new FormData();
   formData.append("image", file);
 
@@ -160,6 +229,34 @@ async function uploadImage() {
       if (data.warning) {
         botBubble.innerHTML += `<br><em>${data.warning}</em>`;
       }
+=======
+    const messagesDiv = document.getElementById("messages");
+    try {
+      const response = await fetch("/upload-measurements", {
+        method: "POST",
+        body: formData
+      });
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+      const data = await response.json();
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      if (data.error) {
+        botBubble.textContent = `Error: ${data.error}`;
+      } else {
+        botBubble.innerHTML = `Outer Deck Area: ${data.outerDeckArea} sq ft<br>
+          Pool Area: ${data.poolArea} sq ft<br>
+          Usable Deck Area: ${data.usableDeckArea} sq ft<br>
+          Railing Footage: ${data.railingFootage} ft`;
+      }
+      messagesDiv.appendChild(botBubble);
+    } catch (err) {
+      const botBubble = document.createElement('div');
+      botBubble.className = 'bot';
+      botBubble.textContent = `Error: ${err.message}`;
+      messagesDiv.appendChild(botBubble);
+ main
     }
     messagesDiv.appendChild(botBubble);
   } catch (err) {
@@ -197,9 +294,12 @@ async function uploadDrawing() {
     const data = await response.json();
     alert(data.error || "Error processing drawing.");
   }
+ codex/clean-up-merge-artifacts
 
   drawInput.value = "";
 }
+=======
+ main
 </script>
 </body>
 </html>
