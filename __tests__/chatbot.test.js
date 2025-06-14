@@ -20,8 +20,8 @@ process.env.MEM_DB = memoryDb;
 const { app } = require('../server.cjs');
 const memory = require('../memory');
 
-beforeEach(() => {
-  memory.clearMemory();
+beforeEach(async () => {
+  await memory.clearMemory();
 });
 
 afterAll(() => {
@@ -66,7 +66,7 @@ describe('server endpoints', () => {
     const res = await request(app).post('/chatbot').send({ message: 'hello' });
     expect(res.status).toBe(200);
     expect(res.body.response).toBe('mocked');
-    const history = memory.getRecentMessages();
+    const history = await memory.getRecentMessages();
     expect(history.slice(-2)).toEqual([
       expect.objectContaining({ role: 'user', content: 'hello' }),
       expect.objectContaining({ role: 'assistant', content: 'mocked' })

@@ -1,10 +1,16 @@
 const path = require('path');
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose();
+const { promisify } = require('util');
 
 const dbFile = process.env.MEM_DB || path.join(__dirname, 'memory.sqlite');
-const db = new Database(dbFile);
+const db = new sqlite3.Database(dbFile);
 
-db.exec(`
+const run = promisify(db.run.bind(db));
+const all = promisify(db.all.bind(db));
+const exec = promisify(db.exec.bind(db));
+
+db.serialize(() => {
+  db.exec(`
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   role TEXT NOT NULL,
@@ -65,68 +71,67 @@ CREATE TABLE IF NOT EXISTS material_estimates (
   sq_ft_rate REAL,
   total_cost REAL,
   FOREIGN KEY (deck_id) REFERENCES deck_drawings(id)
-);`);
+);
+`);
+});
 
-function addMessage(role, content) {
-  const stmt = db.prepare('INSERT INTO messages (role, content, timestamp) VALUES (?, ?, ?)');
-  stmt.run(role, content, Date.now());
+async function addMessage(role, content) {
+  await run('INSERT INTO messages (role, content, timestamp) VALUES (?, ?, ?)', [role, content, Date.now()]);
 }
 
-function addMeasurement(data) {
-  const stmt = db.prepare('INSERT INTO measurements (data, timestamp) VALUES (?, ?)');
-  stmt.run(JSON.stringify(data), Date.now());
+async function addMeasurement(data) {
+  await run('INSERT INTO measurements (data, timestamp) VALUES (?, ?)', [JSON.stringify(data), Date.now()]);
 }
 
-function logDeckDrawing({ filename, userNotes = null, detectedShape = null, dimensionsJson = null, processedArea = null }) {
-  const stmt = db.prepare(
-    'INSERT INTO deck_drawings (filename, user_notes, detected_shape, dimensions_json, processed_area) VALUES (?, ?, ?, ?, ?)'
+async function logDeckDrawing({ filename, userNotes = null, detectedShape = null, dimensionsJson = null, processedArea = null }) {
+  await run(
+    'INSERT INTO deck_drawings (filename, user_notes, detected_shape, dimensions_json, processed_area) VALUES (?, ?, ?, ?, ?)',
+    [filename, userNotes, detectedShape, dimensionsJson, processedArea]
   );
-  stmt.run(filename, userNotes, detectedShape, dimensionsJson, processedArea);
 }
 
-function logUploadHistory({ fileName, fileType, userId = null }) {
-  const stmt = db.prepare(
-    'INSERT INTO upload_history (file_name, file_type, user_id) VALUES (?, ?, ?)'
+async function logUploadHistory({ fileName, fileType, userId = null }) {
+  await run(
+    'INSERT INTO upload_history (file_name, file_type, user_id) VALUES (?, ?, ?)',
+    [fileName, fileType, userId]
   );
-  stmt.run(fileName, fileType, userId);
 }
 
-function logAreaCalculation({ drawingId = null, method, inputData, calculatedArea, correctedByUser = null }) {
-  const stmt = db.prepare(
-    'INSERT INTO area_calculations (drawing_id, method, input_data, calculated_area, corrected_by_user) VALUES (?, ?, ?, ?, ?)'
+async function logAreaCalculation({ drawingId = null, method, inputData, calculatedArea, correctedByUser = null }) {
+  await run(
+    'INSERT INTO area_calculations (drawing_id, method, input_data, calculated_area, corrected_by_user) VALUES (?, ?, ?, ?, ?)',
+    [drawingId, method, JSON.stringify(inputData), calculatedArea, correctedByUser]
   );
-  stmt.run(drawingId, method, JSON.stringify(inputData), calculatedArea, correctedByUser);
 }
 
-function logImprovementFeedback({ areaCalcId, feedbackType, comments = null }) {
-  const stmt = db.prepare(
-    'INSERT INTO improvement_feedback (area_calc_id, feedback_type, comments) VALUES (?, ?, ?)'
+async function logImprovementFeedback({ areaCalcId, feedbackType, comments = null }) {
+  await run(
+    'INSERT INTO improvement_feedback (area_calc_id, feedback_type, comments) VALUES (?, ?, ?)',
+    [areaCalcId, feedbackType, comments]
   );
-  stmt.run(areaCalcId, feedbackType, comments);
 }
 
-function addQuote({ customerName = null, deckArea, material = null, priceEstimate = null }) {
-  const stmt = db.prepare(
-    'INSERT INTO quotes (customer_name, deck_area, material, price_estimate) VALUES (?, ?, ?, ?)'
+async function addQuote({ customerName = null, deckArea, material = null, priceEstimate = null }) {
+  await run(
+    'INSERT INTO quotes (customer_name, deck_area, material, price_estimate) VALUES (?, ?, ?, ?)',
+    [customerName, deckArea, material, priceEstimate]
   );
-  stmt.run(customerName, deckArea, material, priceEstimate);
 }
 
-function addMaterialEstimate({ deckId, materialType, sqFtRate, totalCost }) {
-  const stmt = db.prepare(
-    'INSERT INTO material_estimates (deck_id, material_type, sq_ft_rate, total_cost) VALUES (?, ?, ?, ?)'
+async function addMaterialEstimate({ deckId, materialType, sqFtRate, totalCost }) {
+  await run(
+    'INSERT INTO material_estimates (deck_id, material_type, sq_ft_rate, total_cost) VALUES (?, ?, ?, ?)',
+    [deckId, materialType, sqFtRate, totalCost]
   );
-  stmt.run(deckId, materialType, sqFtRate, totalCost);
 }
 
-function getRecentMessages(limit = 10) {
-  const stmt = db.prepare('SELECT role, content, timestamp FROM messages ORDER BY id DESC LIMIT ?');
-  const rows = stmt.all(limit);
+async function getRecentMessages(limit = 10) {
+  const rows = await all('SELECT role, content, timestamp FROM messages ORDER BY id DESC LIMIT ?', [limit]);
   return rows.reverse();
 }
 
-function clearMemory() {
-  db.exec(`
+async function clearMemory() {
+  await exec(`
     DELETE FROM messages;
     DELETE FROM measurements;
     DELETE FROM deck_drawings;

@@ -21,7 +21,7 @@ async function uploadMeasurements(req, res) {
     const storedName = `measurement-${Date.now()}-${req.file.originalname}`;
     const storedPath = path.join(uploadDir, storedName);
     await fs.promises.writeFile(storedPath, req.file.buffer);
-    logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
+    await logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
     const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
       tessedit_char_whitelist: '0123456789.',
@@ -47,7 +47,7 @@ async function uploadMeasurements(req, res) {
     }
     const outerArea = polygonArea(outerPoints);
     const poolArea = hasPool ? polygonArea(poolPoints) : 0;
-    logAreaCalculation({
+    await logAreaCalculation({
       method: 'polygon',
       inputData: { outerPoints, poolPoints },
       calculatedArea: outerArea - poolArea
