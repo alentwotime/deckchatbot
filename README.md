@@ -21,3 +21,8 @@ Run the test suite with:
 npm test
 ```
 ## Backup\nRun `npm run backup` to export saved measurements to measurement_backup.json.
+
+## Documentation
+
+- [Master Prompt](docs/MASTER_PROMPT.md)
+- [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
