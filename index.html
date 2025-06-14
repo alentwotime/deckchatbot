@@ -12,7 +12,8 @@
     <button id="themeToggle" class="btn btn-secondary btn-sm">Toggle Theme</button>
   </div>
   <p class="note">To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.</p>
-  <div id="chat">
+  <div id="chatContainer">
+    <div id="chat">
     <h2>Decking Chatbot</h2>
     <div id="messages"></div>
     <form id="chatForm" autocomplete="off">
@@ -32,11 +33,12 @@
       <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary mt-2">Upload Drawing</button>
     </div>
     <div id="processing" class="mt-2 text-center" style="display:none;">Processing...</div>
+    </div><!-- end chat -->
     <div id="digitalWrapper" class="mt-4 text-center">
       <h3>Digitalized Drawing</h3>
       <img id="digitalImage" alt="Digitalized drawing" class="img-fluid">
     </div>
-  </div>
+  </div><!-- end chatContainer -->
   <script src="script.js"></script>
 </body>
 </html>

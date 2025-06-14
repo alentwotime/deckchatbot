@@ -66,10 +66,10 @@ async function chatbot(req, res, next) {
   }
 }
 
-function getHistory(req, res) {
+async function getHistory(req, res) {
   const limit = parseInt(req.query.limit, 10) || 10;
   try {
-    const history = getRecentMessages(limit);
+    const history = await getRecentMessages(limit);
     res.json({ history });
   } catch (err) {
     logger.error(err.stack);

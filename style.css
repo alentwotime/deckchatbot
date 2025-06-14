@@ -34,6 +34,11 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+#chatContainer {
+  max-width: 1200px;
+  margin: auto;
+}
+
 #messages {
   border: 1px solid var(--border-color);
   padding: 10px;
@@ -61,8 +66,26 @@ body {
 }
 
 #digitalWrapper {
-  max-width: 600px;
+  width: 100%;
   margin: 20px auto;
+}
+
+@media (min-width: 900px) {
+  #chatContainer {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  #chat {
+    flex: 1 1 60%;
+    max-width: 700px;
+    margin: 0;
+  }
+  #digitalWrapper {
+    flex: 1 1 40%;
+    margin: 0;
+    max-width: none;
+  }
 }
 
 @keyframes fadeIn {
