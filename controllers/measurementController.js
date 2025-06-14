@@ -3,6 +3,12 @@ const { validationResult } = require('express-validator');
 const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../utils/geometry');
 const { extractNumbers } = require('../utils/extract');
 const logger = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
+const {
+  logUploadHistory,
+  logAreaCalculation
+} = require('../memory');
 
 async function uploadMeasurements(req, res) {
   try {
@@ -10,6 +16,12 @@ async function uploadMeasurements(req, res) {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    const uploadDir = path.join(__dirname, '..', 'uploads');
+    await fs.promises.mkdir(uploadDir, { recursive: true });
+    const storedName = `measurement-${Date.now()}-${req.file.originalname}`;
+    const storedPath = path.join(uploadDir, storedName);
+    await fs.promises.writeFile(storedPath, req.file.buffer);
+    logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
     const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
       tessedit_char_whitelist: '0123456789.',
@@ -35,6 +47,11 @@ async function uploadMeasurements(req, res) {
     }
     const outerArea = polygonArea(outerPoints);
     const poolArea = hasPool ? polygonArea(poolPoints) : 0;
+    logAreaCalculation({
+      method: 'polygon',
+      inputData: { outerPoints, poolPoints },
+      calculatedArea: outerArea - poolArea
+    });
     const deckArea = outerArea - poolArea;
     const railingFootage = calculatePerimeter(outerPoints);
     const fasciaBoardLength = railingFootage;

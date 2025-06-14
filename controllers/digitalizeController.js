@@ -5,12 +5,25 @@ const { Jimp } = require('jimp');
 const potrace = require('potrace');
 const logger = require('../utils/logger');
 const { cleanTempFile } = require('../utils/tmp-cleaner');
+const {
+  logDeckDrawing,
+  logUploadHistory
+} = require('../memory');
 
 async function digitalizeDrawing(req, res) {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Please upload an image.' });
     }
+
+    const uploadDir = path.join(__dirname, '..', 'uploads');
+    await fs.promises.mkdir(uploadDir, { recursive: true });
+    const storedName = `drawing-${Date.now()}-${req.file.originalname}`;
+    const storedPath = path.join(uploadDir, storedName);
+    await fs.promises.writeFile(storedPath, req.file.buffer);
+    logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
+    logDeckDrawing({ filename: storedName });
+
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
 
