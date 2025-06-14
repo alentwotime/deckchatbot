@@ -2,7 +2,7 @@ const Tesseract = require('tesseract.js');
 const { validationResult } = require('express-validator');
 const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../utils/geometry');
 const { extractNumbers } = require('../utils/extract');
-const { logger } = require('../server.cjs');
+const logger = require('../utils/logger');
 
 async function uploadMeasurements(req, res) {
   try {

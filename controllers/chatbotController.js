@@ -1,4 +1,3 @@
-const OpenAI = require('openai');
 const { body, validationResult } = require('express-validator');
 const { addMessage, getRecentMessages } = require('../memory');
 const {
@@ -9,9 +8,8 @@ const {
   deckAreaExplanation
 } = require('../utils/geometry');
 const config = require('../config');
-const { logger } = require('../server.cjs');
-
-const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+const logger = require('../utils/logger');
+const { askChat } = require('../services/openai.service');
 
 const validate = [body('message').exists({ checkFalsy: true }).withMessage('message is required')];
 
@@ -54,15 +52,11 @@ async function chatbot(req, res, next) {
       return res.json({ response: reply });
     }
     const history = getRecentMessages();
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: `You are a smart math bot using this calculation guide:\n${calculationGuide}\nAlways form follow-up questions if needed to clarify user data.` },
-        ...history.map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: message }
-      ]
-    });
-    const botReply = completion.choices[0].message.content;
+    const botReply = await askChat([
+      { role: 'system', content: `You are a smart math bot using this calculation guide:\n${calculationGuide}\nAlways form follow-up questions if needed to clarify user data.` },
+      ...history.map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message }
+    ]);
     addMessage('assistant', botReply);
     res.json({ response: botReply });
   } catch (err) {

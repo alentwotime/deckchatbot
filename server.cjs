@@ -1,48 +1,20 @@
- codex/create-boilerplate-folder-structure-with-files
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
 const config = require('./config');
+const routes = require('./routes');
+const logger = require('./utils/logger');
 
 if (!config.OPENAI_API_KEY) {
   console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
 
-const express = require('express');
-const multer = require('multer');
-const Tesseract = require('tesseract.js');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const winston = require('winston');
-const { body, validationResult } = require('express-validator');
-const OpenAI = require('openai');
-const math = require('mathjs');
-=======
-@@ -17,216 +17,138 @@ const math = require('mathjs');
- main
-const Jimp = require('jimp');
-const potrace = require('potrace');
-const os = require('os');
-const { addMessage, getRecentMessages } = require('./memory');
-
-const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
-
-const logDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
-}
-
-const logger = winston.createLogger({
-  level: config.LOG_LEVEL,
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}]: ${message}`)
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: path.join(logDir, 'app.log') })
-  ]
-});
 
 const app = express();
+ codex/refactor-project-structure-and-improve-production-readiness
+=======
  codex/suggest-improvements-for-bot-logic
 =======
  codex/create-boilerplate-folder-structure-with-files
@@ -60,7 +32,14 @@ const port = 3000;
 =======
  main
  main
+ main
 
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.'
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -69,6 +48,9 @@ app.use((req, _res, next) => {
   next();
 });
 
+ codex/refactor-project-structure-and-improve-production-readiness
+app.use('/', routes);
+=======
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -549,91 +531,20 @@ app.post(
     if (mathAnswer !== null) {
       return res.json({ response: `Result: ${mathAnswer}` });
     }
-
-    const calculationGuide = `Here’s a detailed guide for calculating square footage and other shapes:\n1. Rectangle: L × W\n2. Triangle: (1/2) × Base × Height\n3. Circle: π × Radius²\n4. Half Circle: (1/2) π × Radius²\n5. Quarter Circle: (1/4) π × Radius²\n6. Trapezoid: (1/2) × (Base1 + Base2) × Height\n7. Complex Shapes: sum of all simpler shapes’ areas.\n8. Fascia Board: total perimeter length (excluding steps).`;
-
-    try {
-      addMessage('user', message);
-=======
-    const calculationGuide = `Here’s a detailed guide for calculating square footage and other shapes:\n1. Rectangle: L × W\n2. Triangle: (1/2) × Base × Height\n3. Circle: π × Radius²\n4. Half Circle: (1/2) × π × Radius²\n5. Quarter Circle: (1/4) × π × Radius²\n6. Trapezoid: (1/2) × (Base1 + Base2) × Height\n7. Complex Shapes: sum of all simpler shapes’ areas.\n8. Fascia Board: total perimeter length (excluding steps).`;
-    try {
-      addMessage('user', message);
-      const shape = shapeFromMessage(message);
-      if (shape) {
-        const { type, dimensions } = shape;
-        let area = 0;
-        let perimeter = null;
-        if (type === 'rectangle') {
-          area = rectangleArea(dimensions.length, dimensions.width);
-          perimeter = 2 * (dimensions.length + dimensions.width);
-        } else if (type === 'circle') {
-          area = circleArea(dimensions.radius);
-          perimeter = 2 * Math.PI * dimensions.radius;
-        } else if (type === 'triangle') {
-          area = triangleArea(dimensions.base, dimensions.height);
-        } else if (type === 'trapezoid') {
-          area = 0.5 * (dimensions.base1 + dimensions.base2) * dimensions.height;
-        }
-        const hasCutout = /pool|cutout/i.test(message);
-        const explanation = deckAreaExplanation({
-          hasCutout,
-          hasMultipleShapes: hasCutout
-        });
-        let reply = `The ${type} area is ${area.toFixed(2)}.`;
-        if (perimeter !== null) {
-          reply += ` Perimeter is ${perimeter.toFixed(2)}.`;
-        }
-        reply += ` ${explanation}`;
-        addMessage('assistant', reply);
-        return res.json({ response: reply });
-      }
  main
-      const history = getRecentMessages();
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: `You are a smart math bot using this calculation guide:\n${calculationGuide}\nAlways form follow-up questions if needed to clarify user data.` },
-          ...history.map(m => ({ role: m.role, content: m.content })),
-          { role: 'user', content: message }
-        ]
-      });
-      const botReply = completion.choices[0].message.content;
-      addMessage('assistant', botReply);
-      res.json({ response: botReply });
-    } catch (err) {
-      err.userMessage = 'Error communicating with OpenAI.';
-      next(err);
-    }
-  }
-);
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use((err, _req, res, _next) => {
- codex/create-boilerplate-folder-structure-with-files
   logger.error(err.stack);
   res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
 });
 
 if (require.main === module) {
-  app.listen(port, () => {
-    logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  app.listen(config.PORT, () => {
+    logger.info(`Decking Chatbot running at http://localhost:${config.PORT}`);
   });
 }
 
-module.exports = {
-  app,
-  rectangleArea,
-  circleArea,
-  triangleArea,
-  polygonArea,
-  shapeFromMessage,
-  deckAreaExplanation,
-  extractNumbers,
-  logger
-};
-=======
-  logger.error(err.stack);
- main
+module.exports = { app, logger };
+
