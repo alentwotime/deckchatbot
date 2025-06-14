@@ -7,6 +7,17 @@
   --message-bot-bg: #f1f1f1;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #000000;
+    --text-color: #eeeeee;
+    --chat-bg: #222222;
+    --border-color: #444444;
+    --message-user-bg: #4a90e2;
+    --message-bot-bg: #444444;
+  }
+}
+
 body[data-theme='dark'] {
   --bg-color: #000000;
   --text-color: #eeeeee;
