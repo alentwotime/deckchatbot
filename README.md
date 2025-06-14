@@ -8,6 +8,8 @@ This project provides a simple Express server with a chatbot interface for deck 
    npm install
    ```
 2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`.
+   You can also adjust `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` to customize
+   request rate limiting.
 3. Start the server:
    ```bash
    npm start
