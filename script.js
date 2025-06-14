@@ -110,9 +110,11 @@ async function uploadDrawing() {
 
 function toggleTheme() {
   const body = document.body;
+  const toggleBtn = document.getElementById('themeToggle');
   const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   body.setAttribute('data-theme', newTheme);
   localStorage.setItem('theme', newTheme);
+  toggleBtn.setAttribute('aria-pressed', newTheme === 'dark');
 }
 
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
@@ -147,4 +149,19 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   drawInput.addEventListener('change', () => showPreview(drawInput.files[0]));
+
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (e.altKey && key === 't') {
+      e.preventDefault();
+      toggleTheme();
+      document.getElementById('themeToggle').focus();
+    } else if (e.altKey && key === 'u') {
+      e.preventDefault();
+      document.getElementById('imageInput').focus();
+    } else if (e.altKey && key === 'd') {
+      e.preventDefault();
+      document.getElementById('drawingDropZone').focus();
+    }
+  });
 });
