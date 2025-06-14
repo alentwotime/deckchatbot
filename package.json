@@ -6,16 +6,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
- feature/skirting-estimator
-=======
- feature/skirting-estimator
- main
     "dev": "nodemon server.cjs",
-    "test": "jest"
-=======
     "test": "jest",
     "backup": "node scripts/backupMeasurements.js"
- main
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
