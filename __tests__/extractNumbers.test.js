@@ -8,7 +8,7 @@ jest.mock('openai', () => {
   }));
 });
 
-const { extractNumbers } = require('../server.cjs');
+const { extractNumbers } = require('../utils/extract');
 
 describe('extractNumbers', () => {
   test('extracts numbers with units', () => {

@@ -1,13 +1,15 @@
+ codex/add-/metrics-endpoint-and-request-id
 require('dotenv').config();
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
 
+=======
+ main
 const express = require('express');
-const multer = require('multer');
-const Tesseract = require('tesseract.js');
 const cors = require('cors');
+ codex/add-/metrics-endpoint-and-request-id
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
@@ -23,12 +25,20 @@ const { v4: uuidv4 } = require('uuid');
 client.collectDefaultMetrics();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+=======
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
-const logDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+const config = require('./config');
+const routes = require('./routes');
+const logger = require('./utils/logger');
+ main
+
+if (!config.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
 
+ codex/add-/metrics-endpoint-and-request-id
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
@@ -43,7 +53,37 @@ const logger = winston.createLogger({
 
 const app = express();
 const port = 3000;
+=======
 
+const app = express();
+ codex/refactor-project-structure-and-improve-production-readiness
+=======
+ codex/suggest-improvements-for-bot-logic
+=======
+ codex/create-boilerplate-folder-structure-with-files
+const port = config.PORT;
+=======
+ main
+ codex/suggest-improvements-for-bot-logic
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+const port = process.env.PORT || 3000;
+=======
+const port = 3000;
+ main
+ codex/suggest-improvements-for-bot-logic
+=======
+ main
+ main
+ main
+ main
+
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.'
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -56,6 +96,9 @@ app.use((req, _res, next) => {
   next();
 });
 
+ codex/refactor-project-structure-and-improve-production-readiness
+app.use('/', routes);
+=======
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -290,6 +333,66 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
         resolve(out);
       });
     });
+ codex/add-/metrics-endpoint-and-request-id
+=======
+ codex/suggest-improvements-for-bot-logic
+
+    const {
+      data: { text }
+    } = await Tesseract.recognize(buffer, 'eng', {
+      tessedit_pageseg_mode: 6,
+      tessedit_char_whitelist: '0123456789.',
+      logger: info => logger.debug(info)
+    });
+    const numbers = extractNumbers(text);
+    const points = [];
+    for (let i = 0; i < numbers.length; i += 2) {
+      if (numbers[i + 1] !== undefined) {
+        points.push({ x: numbers[i], y: numbers[i + 1] });
+      }
+ codex/suggest-improvements-for-bot-logic
+    }
+=======
+    let ocrText = '';
+    try {
+      const {
+        data: { text }
+      } = await Tesseract.recognize(buffer, 'eng', {
+        tessedit_pageseg_mode: 6,
+        tessedit_char_whitelist: '0123456789.',
+        logger: info => logger.debug(info)
+      });
+      ocrText = text;
+    } catch (ocrErr) {
+      logger.error(ocrErr);
+    }
+
+ main
+    let area = null;
+    let perimeter = null;
+    if (points.length >= 3) {
+      area = polygonArea(points);
+      perimeter = calculatePerimeter(points);
+ codex/suggest-improvements-for-bot-logic
+=======
+    if (ocrText) {
+      const numbers = extractNumbers(ocrText);
+      const points = [];
+      for (let i = 0; i < numbers.length; i += 2) {
+        if (numbers[i + 1] !== undefined) {
+          points.push({ x: numbers[i], y: numbers[i + 1] });
+        }
+      }
+      if (points.length >= 3) {
+        area = polygonArea(points);
+        perimeter = calculatePerimeter(points);
+      }
+ main
+    }
+
+=======
+ main
+ main
     res.set('Content-Type', 'image/svg+xml');
     res.send(svg);
   } catch (err) {
@@ -311,6 +414,7 @@ app.post(
       return res.status(400).json({ errors: errors.array() });
     }
     const { message } = req.body;
+ codex/add-/metrics-endpoint-and-request-id
     const calculationGuide = `Here’s a detailed guide for calculating square footage and other shapes:\n1. Rectangle: L × W\n2. Triangle: (1/2) × Base × Height\n3. Circle: π × Radius²\n4. Half Circle: (1/2) × π × Radius²\n5. Quarter Circle: (1/4) × π × Radius²\n6. Trapezoid: (1/2) × (Base1 + Base2) × Height\n7. Complex Shapes: sum of all simpler shapes’ areas.\n8. Fascia Board: total perimeter length (excluding steps).`;
     try {
       addMessage('user', message);
@@ -370,6 +474,37 @@ app.get('/metrics', async (req, res) => {
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+=======
+ codex/suggest-improvements-for-bot-logic
+
+    const shape = shapeFromMessage(message);
+    if (shape) {
+      const { type, dimensions } = shape;
+      let area = 0;
+      if (type === 'rectangle') {
+        area = rectangleArea(dimensions.length, dimensions.width);
+      } else if (type === 'circle') {
+        area = circleArea(dimensions.radius);
+      } else if (type === 'triangle') {
+        area = triangleArea(dimensions.base, dimensions.height);
+      }
+      const hasCutout = /pool|cutout/i.test(message);
+      const explanation = deckAreaExplanation({
+        hasCutout,
+        hasMultipleShapes: hasCutout
+      });
+      const reply = `The ${type} area is ${area.toFixed(2)}. ${explanation}`;
+      addMessage('assistant', reply);
+      return res.json({ response: reply });
+    }
+    const mathAnswer = evaluateExpression(message);
+    if (mathAnswer !== null) {
+      return res.json({ response: `Result: ${mathAnswer}` });
+    }
+ main
+
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+ main
 
 app.use((err, _req, res, _next) => {
   logger.error(err.stack);
@@ -377,11 +512,12 @@ app.use((err, _req, res, _next) => {
 });
 
 if (require.main === module) {
-  app.listen(port, () => {
-    logger.info(`Decking Chatbot with Enhanced Calculation Guide running at http://localhost:${port}`);
+  app.listen(config.PORT, () => {
+    logger.info(`Decking Chatbot running at http://localhost:${config.PORT}`);
   });
 }
 
+ codex/add-/metrics-endpoint-and-request-id
 module.exports = {
   app,
   rectangleArea,
@@ -393,3 +529,7 @@ module.exports = {
   extractNumbers,
   logger
 };
+=======
+module.exports = { app, logger };
+
+ main
