@@ -7,7 +7,8 @@ This project provides a simple Express server with a chatbot interface for deck 
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`.
+2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`. The server will
+   fail to start if this variable is not provided.
 3. Start the server:
    ```bash
    npm start
