@@ -3,11 +3,15 @@ const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../uti
 const { extractNumbers } = require('../utils/extract');
 const logger = require('../utils/logger');
 
+// Converts feet + inches to decimal
+function ftInToDecimal(feet = 0, inches = 0) {
+  return parseFloat(feet) + parseFloat(inches || 0) / 12;
+}
+
 async function uploadMeasurements(req, res) {
   try {
     logger.info('🟡 Upload request received.');
 
-    // ✅ 1. Prevent multer crash if no image
     if (!req.file) {
       logger.warn('⚠️ No image file received in upload.');
       return res.status(400).json({
@@ -28,14 +32,13 @@ async function uploadMeasurements(req, res) {
     const numbers = extractNumbers(text);
     logger.info(`🔢 Extracted numbers: ${numbers.join(', ')}`);
 
-    // ✅ 2. Consistent error format for test expectations
-  if (numbers.length < 6) {
-  return res.status(400).json({
-    errors: [{
-      msg: 'Not enough coordinates detected. Please ensure your drawing is clear and numbers are legible.'
-    }]
-  });
-}
+    if (numbers.length < 6) {
+      return res.status(400).json({
+        errors: [{
+          msg: 'Not enough coordinates detected. Please ensure your drawing is clear and numbers are legible.'
+        }]
+      });
+    }
 
     const hasPool = /pool/i.test(text);
     const midpoint = hasPool ? numbers.length / 2 : numbers.length;
@@ -67,6 +70,39 @@ async function uploadMeasurements(req, res) {
       hasMultipleShapes: poolArea > 0
     });
 
+    // ✅ SKIRTING LOGIC START
+    const includeSkirting = /skirt|skirting/i.test(text);
+    let skirting = null;
+
+    if (includeSkirting) {
+      const length = numbers[0] || 0;
+      const width = numbers[2] || 0;
+      const height = numbers[4] || 3; // default deck height
+
+      const perimeter = 2 * (length + width); // assuming 4 sides
+      const skirtingHeight = ftInToDecimal(height);
+      const skirtingArea = perimeter * skirtingHeight;
+      const panelsNeeded = Math.ceil(skirtingArea / 32); // 4'x8' = 32 sq ft
+
+      const material = /composite/i.test(text)
+        ? 'Composite'
+        : /pvc/i.test(text)
+          ? 'PVC'
+          : /mineral/i.test(text)
+            ? 'Mineral Board'
+            : 'Composite';
+
+      skirting = {
+        perimeterFt: perimeter.toFixed(2),
+        heightFt: skirtingHeight.toFixed(2),
+        skirtingArea: skirtingArea.toFixed(2),
+        estimatedPanels: panelsNeeded,
+        material,
+        tip: 'Add 1–2 extra panels to cover waste and trimming.'
+      };
+    }
+    // ✅ SKIRTING LOGIC END
+
     res.json({
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
@@ -74,8 +110,10 @@ async function uploadMeasurements(req, res) {
       railingFootage: railingFootage.toFixed(2),
       fasciaBoardLength: fasciaBoardLength.toFixed(2),
       warning,
-      explanation
+      explanation,
+      ...(skirting && { skirting })
     });
+
   } catch (err) {
     logger.error(`❌ Error in uploadMeasurements: ${err.stack}`);
     res.status(500).json({
