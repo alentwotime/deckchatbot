@@ -54,8 +54,13 @@ beforeEach(() => {
   potrace.trace.mockReset();
 });
 
-afterAll(() => {
-  if (fs.existsSync(memoryDb)) fs.unlinkSync(memoryDb);
+// ✅ Fix EBUSY error with async unlink
+afterAll(async () => {
+  try {
+    await fs.promises.unlink(memoryDb);
+  } catch (err) {
+    console.warn('Could not delete SQLite file:', err.message);
+  }
 });
 
 describe('server edge cases', () => {
@@ -70,7 +75,7 @@ describe('server edge cases', () => {
       shapes: [{ type: 'hexagon', dimensions: {} }]
     });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/Unsupported shape type/);
+    expect(res.body.errors[0].msg).toMatch(/Unsupported shape type/);
   });
 
   test('/upload-measurements not enough numbers', async () => {
@@ -79,7 +84,7 @@ describe('server edge cases', () => {
       .post('/upload-measurements')
       .attach('image', Buffer.from('img'), 'test.png');
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/Not enough numbers/);
+    expect(res.body.errors[0].msg).toMatch(/Not enough/);
   });
 
   test('/upload-measurements success', async () => {
@@ -117,7 +122,7 @@ describe('server edge cases', () => {
       .post('/digitalize-drawing')
       .attach('image', Buffer.from('img'), 'draw.png');
     expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/Error digitalizing drawing/);
+    expect(res.body.errors[0].msg).toMatch(/Error digitalizing drawing/);
   });
 
   test('/chatbot requires message', async () => {
@@ -127,4 +132,3 @@ describe('server edge cases', () => {
     expect(msgs.some(m => /message is required/.test(m))).toBe(true);
   });
 });
-

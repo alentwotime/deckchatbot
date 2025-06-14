@@ -25,7 +25,9 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  if (fs.existsSync(memoryDb)) fs.unlinkSync(memoryDb);
+  if (fs.existsSync(memoryDb)) {
+    fs.unlinkSync(memoryDb);
+  }
 });
 
 describe('server endpoints', () => {

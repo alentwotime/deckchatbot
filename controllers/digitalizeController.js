@@ -3,13 +3,9 @@ const path = require('path');
 const os = require('os');
 const Jimp = require('jimp');
 const potrace = require('potrace');
- codex/implement-security-enhancements-with-input-validation
-const { logger } = require('../server.cjs');
 const { validationResult } = require('express-validator');
-=======
 const logger = require('../utils/logger');
 const { cleanTempFile } = require('../utils/tmp-cleaner');
- main
 
 async function digitalizeDrawing(req, res) {
   try {
@@ -17,24 +13,32 @@ async function digitalizeDrawing(req, res) {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
 
     const buffer = await new Promise((resolve, reject) => {
       img.getBuffer('image/png', (err, buf) => {
-        if (err) return reject(err);
+        if (err) {
+          return reject(err);
+        }
         resolve(buf);
       });
     });
+
     const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
     await fs.promises.writeFile(tmpPath, buffer);
+
     const svg = await new Promise((resolve, reject) => {
       potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, out) => {
         cleanTempFile(tmpPath);
-        if (err) return reject(new Error('digitalize'));
+        if (err) {
+          return reject(new Error('digitalize'));
+        }
         resolve(out);
       });
     });
+
     res.set('Content-Type', 'image/svg+xml');
     res.send(svg);
   } catch (err) {
