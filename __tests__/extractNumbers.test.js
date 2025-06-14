@@ -16,6 +16,11 @@ describe('extractNumbers', () => {
     expect(extractNumbers(text)).toEqual([10, 12]);
   });
 
+  test('parses feet and inches', () => {
+    const text = "Height 5' 8\"";
+    expect(extractNumbers(text)).toEqual([5 + 8 / 12]);
+  });
+
   test('filters out huge misreads', () => {
     const text = 'Size 611ft';
     expect(extractNumbers(text)).toEqual([]);

@@ -22,7 +22,8 @@ async function uploadMeasurements(req, res) {
       data: { text }
     } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
-      tessedit_char_whitelist: '0123456789.',
+      // Allow foot (') and inch (") symbols in OCR results
+      tessedit_char_whitelist: "0123456789.'\"",
       logger: info => logger.debug(info)
     });
 
