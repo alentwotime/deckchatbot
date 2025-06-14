@@ -9,7 +9,11 @@ if (!process.env.OPENAI_API_KEY) {
  main
 const express = require('express');
 const cors = require('cors');
+ codex/implement-cluster-mode-and-compression-middleware
+const compression = require('compression');
+=======
  codex/add-/metrics-endpoint-and-request-id
+ main
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
@@ -88,6 +92,7 @@ app.use(rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 }));
 app.use(cors());
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.disable('x-powered-by');
