@@ -1,6 +1,6 @@
 # Deck Chatbot
 
-This project provides a simple Express server with a chatbot interface for deck sales and quoting automation. It includes endpoints for calculating deck measurements and uploading images.
+This project provides a simple Express server with a chatbot interface for deck sales and quoting automation. It includes endpoints for calculating deck measurements and uploading images. A `/chatbot/history` endpoint is also available to view recent conversation logs.
 
 ## Setup
 1. Install dependencies:
