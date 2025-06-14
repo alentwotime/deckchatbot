@@ -44,27 +44,44 @@ function evaluateExpression(text) {
   return null;
 }
 
+const { parseMeasurement } = require('./extract');
+
 function shapeFromMessage(message) {
   const text = message.toLowerCase();
-  let m = text.match(/rectangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+
+  let m = text.match(/rectangle\s*([\d'"\.\s]+?)\s*(?:x|by|\*)\s*([\d'"\.\s]+)/);
   if (m) {
-    return { type: 'rectangle', dimensions: { length: parseFloat(m[1]), width: parseFloat(m[2]) } };
+    return {
+      type: 'rectangle',
+      dimensions: { length: parseMeasurement(m[1]), width: parseMeasurement(m[2]) }
+    };
   }
-  m = text.match(/circle.*?radius\s*(\d+(?:\.\d+)?)/);
+
+  m = text.match(/circle.*?radius\s*([\d'"\.]+)/);
   if (m) {
-    return { type: 'circle', dimensions: { radius: parseFloat(m[1]) } };
+    return { type: 'circle', dimensions: { radius: parseMeasurement(m[1]) } };
   }
-  m = text.match(/triangle\s*(\d+(?:\.\d+)?)\s*(?:x|by|\*)\s*(\d+(?:\.\d+)?)/);
+
+  m = text.match(/triangle\s*([\d'"\.\s]+)\s*(?:x|by|\*)\s*([\d'"\.\s]+)/);
   if (m) {
-    return { type: 'triangle', dimensions: { base: parseFloat(m[1]), height: parseFloat(m[2]) } };
+    return {
+      type: 'triangle',
+      dimensions: { base: parseMeasurement(m[1]), height: parseMeasurement(m[2]) }
+    };
   }
-  m = text.match(/trapezoid.*?(\d+(?:\.\d+)?).*?(\d+(?:\.\d+)?).*?height\s*(\d+(?:\.\d+)?)/);
+
+  m = text.match(/trapezoid.*?([\d'"\.]+).*?([\d'"\.]+).*?height\s*([\d'"\.]+)/);
   if (m) {
     return {
       type: 'trapezoid',
-      dimensions: { base1: parseFloat(m[1]), base2: parseFloat(m[2]), height: parseFloat(m[3]) }
+      dimensions: {
+        base1: parseMeasurement(m[1]),
+        base2: parseMeasurement(m[2]),
+        height: parseMeasurement(m[3])
+      }
     };
   }
+
   return null;
 }
 

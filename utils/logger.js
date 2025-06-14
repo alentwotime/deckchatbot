@@ -5,7 +5,7 @@ const config = require('../config');
 
 const logDir = path.join(__dirname, '..', 'logs');
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 const logger = winston.createLogger({

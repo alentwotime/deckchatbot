@@ -2,6 +2,7 @@ const Tesseract = require('tesseract.js');
 const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../utils/geometry');
 const { extractNumbers } = require('../utils/extract');
 const logger = require('../utils/logger');
+const memory = require('../memory');
 
 async function uploadMeasurements(req, res) {
   try {
@@ -21,7 +22,8 @@ async function uploadMeasurements(req, res) {
       data: { text }
     } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
-      tessedit_char_whitelist: '0123456789.',
+      // Allow foot (') and inch (") symbols in OCR results
+      tessedit_char_whitelist: "0123456789.'\"",
       logger: info => logger.debug(info)
     });
 
@@ -65,6 +67,15 @@ async function uploadMeasurements(req, res) {
     const explanation = deckAreaExplanation({
       hasCutout: poolArea > 0,
       hasMultipleShapes: poolArea > 0
+    });
+
+    memory.addMeasurement({
+      numbers,
+      outerDeckArea: outerArea,
+      poolArea,
+      usableDeckArea,
+      railingFootage,
+      fasciaBoardLength
     });
 
     res.json({
