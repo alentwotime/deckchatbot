@@ -14,6 +14,7 @@ const chatbotRoutes = require('./routes/chatbot');
 const digitalizeController = require('./controllers/digitalizeController');
 const measurementRoutes = require('./routes/measurements');
 const shapeController = require('./controllers/shapeController'); // ✅ NEW
+const uploadDrawingRoutes = require('./routes/uploadDrawing');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -35,11 +36,9 @@ app.post(
   digitalizeController.digitalizeDrawing
 );
 
-app.use(
-  '/upload-measurements',
-  upload.single('image'),
-  measurementRoutes
-);
+app.use('/upload-drawing', uploadDrawingRoutes);
+
+app.use('/upload-measurements', measurementRoutes);
 
 // ✅ NEW: handle shape area calculations
 app.post(
@@ -47,8 +46,9 @@ app.post(
   shapeController.calculateMultiShape
 );
 
-// Serve frontend files
+// Serve frontend files and uploads
 app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // 404 handler
 app.use((req, res) => {
