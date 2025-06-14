@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const xss = require('xss-clean');
+const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 const routes = require('./routes');
 const config = require('./config');
@@ -13,6 +14,13 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(compression());
+const limiter = rateLimit({
+  windowMs: config.RATE_LIMIT_WINDOW_MS,
+  max: config.RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(xss());
