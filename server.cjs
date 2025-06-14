@@ -36,9 +36,19 @@ app.post(
   digitalizeController.digitalizeDrawing
 );
 
+ codex/generate-frontend-upload-form-with-preview
 app.use('/upload-drawing', uploadDrawingRoutes);
 
 app.use('/upload-measurements', measurementRoutes);
+=======
+app.use('/upload-drawing', upload.single('image'), uploadDrawingRoutes);
+
+app.use(
+  '/upload-measurements',
+  upload.single('image'),
+  measurementRoutes
+);
+ main
 
 // ✅ NEW: handle shape area calculations
 app.post(
