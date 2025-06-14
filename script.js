@@ -1,7 +1,20 @@
 function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
-  div.textContent = text;
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'message-text';
+  textSpan.textContent = text;
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'timestamp';
+  timeSpan.textContent = new Date().toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  div.appendChild(textSpan);
+  div.appendChild(timeSpan);
   document.getElementById('messages').appendChild(div);
 }
 
