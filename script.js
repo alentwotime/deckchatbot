@@ -1,7 +1,20 @@
 function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
-  div.textContent = text;
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'message-text';
+  textSpan.textContent = text;
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'timestamp';
+  timeSpan.textContent = new Date().toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  div.appendChild(textSpan);
+  div.appendChild(timeSpan);
   document.getElementById('messages').appendChild(div);
 }
 
@@ -74,14 +87,15 @@ async function uploadImage() {
 async function uploadDrawing() {
   const drawInput = document.getElementById('drawingInput');
   const preview = document.getElementById('drawingPreview');
-  const processing = document.getElementById('processing');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const modalEl = document.getElementById('drawingModal');
   const file = drawInput.files[0];
   if (!file) {
     alert('Please select a drawing to upload.');
     return;
   }
 
-  processing.style.display = 'block';
+  progressBar.style.display = 'block';
   const formData = new FormData();
   formData.append('image', file);
 
@@ -95,6 +109,9 @@ async function uploadDrawing() {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       document.getElementById('digitalImage').src = url;
+      if (window.bootstrap) {
+        bootstrap.Modal.getInstance(modalEl).hide();
+      }
     } else {
       const data = await response.json();
       alert(data.error || 'Error processing drawing.');
@@ -102,7 +119,7 @@ async function uploadDrawing() {
   } catch (err) {
     alert('Error processing drawing.');
   } finally {
-    processing.style.display = 'none';
+    progressBar.style.display = 'none';
     drawInput.value = '';
     preview.style.display = 'none';
   }
@@ -118,7 +135,10 @@ function toggleTheme() {
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('theme') || 'light';
+  let saved = localStorage.getItem('theme');
+  if (!saved) {
+    saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
   document.body.setAttribute('data-theme', saved);
 
   const dropZone = document.getElementById('drawingDropZone');

@@ -7,6 +7,17 @@
   --message-bot-bg: #f1f1f1;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #000000;
+    --text-color: #eeeeee;
+    --chat-bg: #222222;
+    --border-color: #444444;
+    --message-user-bg: #4a90e2;
+    --message-bot-bg: #444444;
+  }
+}
+
 body[data-theme='dark'] {
   --bg-color: #000000;
   --text-color: #eeeeee;
@@ -53,6 +64,13 @@ body {
   border-radius: 6px;
   margin-bottom: 8px;
   animation: fadeIn 0.3s ease-in-out;
+}
+
+.message .timestamp {
+  display: block;
+  font-size: 0.75em;
+  color: #555;
+  margin-top: 2px;
 }
 
 .message.user {
