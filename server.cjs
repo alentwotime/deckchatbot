@@ -15,6 +15,7 @@ const digitalizeController = require('./controllers/digitalizeController');
 const measurementRoutes = require('./routes/measurements');
 const shapeController = require('./controllers/shapeController'); // ✅ NEW
 const uploadDrawingRoutes = require('./routes/uploadDrawing');
+const deckCalcRoutes = require('./routes/deckCalc');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -36,25 +37,18 @@ app.post(
   digitalizeController.digitalizeDrawing
 );
 
- codex/generate-frontend-upload-form-with-preview
-app.use('/upload-drawing', uploadDrawingRoutes);
-
-app.use('/upload-measurements', measurementRoutes);
-=======
+// Upload routes
 app.use('/upload-drawing', upload.single('image'), uploadDrawingRoutes);
 
-app.use(
-  '/upload-measurements',
-  upload.single('image'),
-  measurementRoutes
-);
- main
+app.use('/upload-measurements', measurementRoutes);
 
 // ✅ NEW: handle shape area calculations
 app.post(
   '/calculate-multi-shape',
   shapeController.calculateMultiShape
 );
+
+app.use('/calculate-deck', deckCalcRoutes);
 
 // Serve frontend files and uploads
 app.use(express.static(path.join(__dirname)));

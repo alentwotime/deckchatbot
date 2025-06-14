@@ -72,6 +72,50 @@
       <h3>Digitalized Drawing</h3>
       <img id="digitalImage" alt="Digitalized drawing" class="img-fluid" />
     </div>
+
+    <!-- Deck Calculator -->
+    <div id="deckCalc" class="mt-5">
+      <h3>Deck Layout & Material Calculator</h3>
+      <form id="deckForm" class="row gy-2 gx-3 align-items-center">
+        <div class="col-auto">
+          <label class="visually-hidden" for="shape">Shape</label>
+          <select id="shape" class="form-select">
+            <option value="rectangle" selected>Rectangle</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="length">Length (ft)</label>
+          <input type="number" min="1" step="0.1" id="length" class="form-control" placeholder="Length (ft)" required />
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="width">Width (ft)</label>
+          <input type="number" min="1" step="0.1" id="width" class="form-control" placeholder="Width (ft)" required />
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="boardWidth">Board Width (in)</label>
+          <input type="number" min="1" step="0.1" id="boardWidth" class="form-control" value="5.5" />
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="boardLength">Board Length (ft)</label>
+          <input type="number" min="1" step="0.1" id="boardLength" class="form-control" value="16" />
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="waste">Waste %</label>
+          <input type="number" min="0" step="1" id="waste" class="form-control" value="10" />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-success">Calculate</button>
+        </div>
+        <div class="col-auto">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="showBoards" checked />
+            <label class="form-check-label" for="showBoards">Show Boards</label>
+          </div>
+        </div>
+      </form>
+      <canvas id="deckCanvas" width="400" height="300" class="border mt-3"></canvas>
+      <div id="calcResults" class="mt-3"></div>
+    </div>
   </div>
 
   <script src="script.js"></script>
