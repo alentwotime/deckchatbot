@@ -38,9 +38,23 @@ describe('geometry utilities', () => {
     expect(shapeFromMessage(msg)).toEqual({ type: 'rectangle', dimensions: { length: 5, width: 10 } });
   });
 
+  test('shapeFromMessage parses quoted dimensions', () => {
+    const msg = 'rectangle 6\' 6\" by 8\'';
+    const result = shapeFromMessage(msg);
+    expect(result).toEqual({
+      type: 'rectangle',
+      dimensions: { length: 6.5, width: 8 }
+    });
+  });
+
   test('shapeFromMessage parses circle', () => {
     const msg = 'circle radius 4';
     expect(shapeFromMessage(msg)).toEqual({ type: 'circle', dimensions: { radius: 4 } });
+  });
+
+  test('shapeFromMessage parses circle with inches', () => {
+    const msg = 'circle radius 18\"';
+    expect(shapeFromMessage(msg)).toEqual({ type: 'circle', dimensions: { radius: 1.5 } });
   });
 
   test('shapeFromMessage handles invalid input', () => {
