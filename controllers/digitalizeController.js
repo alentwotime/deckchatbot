@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const Jimp = require('jimp');
+const { Jimp } = require('jimp');
 const potrace = require('potrace');
 const logger = require('../utils/logger');
 const { cleanTempFile } = require('../utils/tmp-cleaner');
