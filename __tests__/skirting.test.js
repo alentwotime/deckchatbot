@@ -26,4 +26,22 @@ describe('skirting endpoint', () => {
     expect(res.body.material).toBe('Composite');
     expect(res.body.note).toMatch(/durable/);
   });
+
+  test('/calculate-skirting string inputs', async () => {
+    const res = await request(app)
+      .post('/calculate-skirting')
+      .send({
+        length: "12' 6\"",
+        width: "10'",
+        height: "30\"",
+        sides: 3,
+        material: 'PVC'
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.material).toBe('PVC');
+    expect(res.body.perimeter).toBe("32' 6\"");
+    expect(res.body.panelsNeeded).toBe(3);
+    expect(res.body.note).toMatch(/rot-proof/);
+  });
 });
+

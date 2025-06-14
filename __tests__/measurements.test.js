@@ -104,6 +104,17 @@ describe('server edge cases', () => {
     });
   });
 
+  test('/upload-measurements skirting detection', async () => {
+    recognizeMock.mockResolvedValue({ data: { text: "skirting 12' 10' 30\" PVC" } });
+    const res = await request(app)
+      .post('/upload-measurements')
+      .attach('image', Buffer.from('img'), 'skirt.png');
+    expect(res.status).toBe(200);
+    expect(res.body.material).toBe('PVC');
+    expect(res.body.perimeter).toBe("44' 0\"");
+    expect(res.body.panelsNeeded).toBe(4);
+  });
+
   test('/digitalize-drawing success', async () => {
     potrace.trace.mockImplementation((p, o, cb) => cb(null, '<svg/>'));
     recognizeMock.mockResolvedValue({ data: { text: '0 0 10 0 10 10' } });
