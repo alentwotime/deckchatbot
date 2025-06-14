@@ -73,6 +73,14 @@ describe('server endpoints', () => {
     ]);
   });
 
+  test('/chatbot/history returns messages', async () => {
+    await request(app).post('/chatbot').send({ message: 'hi' });
+    const res = await request(app).get('/chatbot/history');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.history)).toBe(true);
+    expect(res.body.history.length).toBeGreaterThan(0);
+  });
+
   test('/chatbot handles rectangle', async () => {
     createMock.mockClear();
     const res = await request(app).post('/chatbot').send({ message: 'rectangle 5x10' });

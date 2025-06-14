@@ -66,4 +66,15 @@ async function chatbot(req, res, next) {
   }
 }
 
-module.exports = { chatbot, validate };
+function getHistory(req, res) {
+  const limit = parseInt(req.query.limit, 10) || 10;
+  try {
+    const history = getRecentMessages(limit);
+    res.json({ history });
+  } catch (err) {
+    logger.error(err.stack);
+    res.status(500).json({ error: 'Failed to fetch message history.' });
+  }
+}
+
+module.exports = { chatbot, validate, getHistory };
