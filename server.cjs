@@ -1,6 +1,7 @@
-require('dotenv').config();
+ codex/create-boilerplate-folder-structure-with-files
+const config = require('./config');
 
-if (!process.env.OPENAI_API_KEY) {
+if (!config.OPENAI_API_KEY) {
   console.warn('OPENAI_API_KEY is not set. Create a .env file with your key.');
 }
 
@@ -14,12 +15,15 @@ const winston = require('winston');
 const { body, validationResult } = require('express-validator');
 const OpenAI = require('openai');
 const math = require('mathjs');
+=======
+@@ -17,216 +17,138 @@ const math = require('mathjs');
+ main
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const os = require('os');
 const { addMessage, getRecentMessages } = require('./memory');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
 const logDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDir)) {
@@ -27,7 +31,7 @@ if (!fs.existsSync(logDir)) {
 }
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: config.LOG_LEVEL,
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}]: ${message}`)
@@ -40,11 +44,21 @@ const logger = winston.createLogger({
 
 const app = express();
  codex/suggest-improvements-for-bot-logic
+=======
+ codex/create-boilerplate-folder-structure-with-files
+const port = config.PORT;
+=======
+ main
+ codex/suggest-improvements-for-bot-logic
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const port = process.env.PORT || 3000;
 =======
 const port = 3000;
+ main
+ codex/suggest-improvements-for-bot-logic
+=======
+ main
  main
 
 app.use(cors());
@@ -58,6 +72,19 @@ app.use((req, _res, next) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+ codex/create-boilerplate-folder-structure-with-files
+const {
+  rectangleArea,
+  circleArea,
+  triangleArea,
+  polygonArea,
+  calculatePerimeter,
+  evaluateExpression,
+  shapeFromMessage,
+  deckAreaExplanation
+} = require('./utils/geometry');
+const { extractNumbers } = require('./utils/extract');
+=======
 function rectangleArea(length, width) {
   return length * width;
 }
@@ -219,6 +246,7 @@ function extractNumbers(rawText) {
   if (!matches) return [];
   return matches.map(Number).filter(n => n <= 500);
 }
+ main
 
 app.use(express.static(path.join(__dirname)));
 
@@ -230,25 +258,7 @@ app.post(
     body('wastagePercent').optional().isNumeric().withMessage('wastagePercent must be numeric')
   ],
   (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const { shapes, wastagePercent = 0 } = req.body;
-    let totalArea = 0;
-    let poolArea = 0;
-  for (const shape of shapes) {
-    const { type, dimensions, isPool } = shape;
-    let area = 0;
-    if (type === 'rectangle') {
-      area = rectangleArea(dimensions.length, dimensions.width);
-    } else if (type === 'circle') {
-      area = circleArea(dimensions.radius);
-    } else if (type === 'triangle') {
-      area = triangleArea(dimensions.base, dimensions.height);
-    } else if (type === 'polygon') {
-      area = polygonArea(dimensions.points);
-    } else {
+@@ -252,124 +174,50 @@ app.post(
       return res.status(400).json({ error: `Unsupported shape type: ${type}` });
     }
     if (isPool) {
@@ -373,19 +383,7 @@ app.post('/upload-measurements', upload.single('image'), [
       });
     }
     const hasPool = /pool/i.test(text);
-    const midpoint = hasPool ? numbers.length / 2 : numbers.length;
-    const outerPoints = [];
-    for (let i = 0; i < midpoint; i += 2) {
-      outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
-    }
-    const poolPoints = [];
-    if (hasPool) {
-      for (let i = midpoint; i < numbers.length; i += 2) {
-        poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
-      }
-    }
-    const outerArea = polygonArea(outerPoints);
-    const poolArea = hasPool ? polygonArea(poolPoints) : 0;
+@@ -389,197 +237,158 @@ app.post('/upload-measurements', upload.single('image'), [
     const deckArea = outerArea - poolArea;
     const railingFootage = calculatePerimeter(outerPoints);
     const fasciaBoardLength = railingFootage;
@@ -458,12 +456,44 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       if (numbers[i + 1] !== undefined) {
         points.push({ x: numbers[i], y: numbers[i + 1] });
       }
+ codex/suggest-improvements-for-bot-logic
     }
+=======
+    let ocrText = '';
+    try {
+      const {
+        data: { text }
+      } = await Tesseract.recognize(buffer, 'eng', {
+        tessedit_pageseg_mode: 6,
+        tessedit_char_whitelist: '0123456789.',
+        logger: info => logger.debug(info)
+      });
+      ocrText = text;
+    } catch (ocrErr) {
+      logger.error(ocrErr);
+    }
+
+ main
     let area = null;
     let perimeter = null;
     if (points.length >= 3) {
       area = polygonArea(points);
       perimeter = calculatePerimeter(points);
+ codex/suggest-improvements-for-bot-logic
+=======
+    if (ocrText) {
+      const numbers = extractNumbers(ocrText);
+      const points = [];
+      for (let i = 0; i < numbers.length; i += 2) {
+        if (numbers[i + 1] !== undefined) {
+          points.push({ x: numbers[i], y: numbers[i + 1] });
+        }
+      }
+      if (points.length >= 3) {
+        area = polygonArea(points);
+        perimeter = calculatePerimeter(points);
+      }
+ main
     }
 
 =======
@@ -582,6 +612,7 @@ app.get('*', (req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
+ codex/create-boilerplate-folder-structure-with-files
   logger.error(err.stack);
   res.status(err.status || 500).json({ error: err.userMessage || 'Internal Server Error' });
 });
@@ -600,5 +631,9 @@ module.exports = {
   polygonArea,
   shapeFromMessage,
   deckAreaExplanation,
-  extractNumbers
+  extractNumbers,
+  logger
 };
+=======
+  logger.error(err.stack);
+ main
