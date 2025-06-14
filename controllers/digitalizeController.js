@@ -21,8 +21,8 @@ async function digitalizeDrawing(req, res) {
     const storedName = `drawing-${Date.now()}-${req.file.originalname}`;
     const storedPath = path.join(uploadDir, storedName);
     await fs.promises.writeFile(storedPath, req.file.buffer);
-    logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
-    logDeckDrawing({ filename: storedName });
+    await logUploadHistory({ fileName: storedName, fileType: req.file.mimetype });
+    await logDeckDrawing({ filename: storedName });
 
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });

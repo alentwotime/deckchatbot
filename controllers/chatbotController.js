@@ -21,7 +21,7 @@ async function chatbot(req, res, next) {
   const { message } = req.body;
   const calculationGuide = `Here’s a detailed guide for calculating square footage and other shapes:\n1. Rectangle: L × W\n2. Triangle: (1/2) × Base × Height\n3. Circle: π × Radius²\n4. Half Circle: (1/2) × π × Radius²\n5. Quarter Circle: (1/4) × π × Radius²\n6. Trapezoid: (1/2) × (Base1 + Base2) × Height\n7. Complex Shapes: sum of all simpler shapes’ areas.\n8. Fascia Board: total perimeter length (excluding steps).`;
   try {
-    addMessage('user', message);
+    await addMessage('user', message);
     const shape = shapeFromMessage(message);
     if (shape) {
       const { type, dimensions } = shape;
@@ -48,16 +48,16 @@ async function chatbot(req, res, next) {
         reply += ` Perimeter is ${perimeter.toFixed(2)}.`;
       }
       reply += ` ${explanation}`;
-      addMessage('assistant', reply);
+      await addMessage('assistant', reply);
       return res.json({ response: reply });
     }
-    const history = getRecentMessages();
+    const history = await getRecentMessages();
     const botReply = await askChat([
       { role: 'system', content: `You are a smart math bot using this calculation guide:\n${calculationGuide}\nAlways form follow-up questions if needed to clarify user data.` },
       ...history.map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: message }
     ]);
-    addMessage('assistant', botReply);
+    await addMessage('assistant', botReply);
     res.json({ response: botReply });
   } catch (err) {
     logger.error(err.stack);

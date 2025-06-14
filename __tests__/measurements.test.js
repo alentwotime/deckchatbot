@@ -46,8 +46,8 @@ process.env.MEM_DB = memoryDb;
 const { app } = require('../server.cjs');
 const memory = require('../memory');
 
-beforeEach(() => {
-  memory.clearMemory();
+beforeEach(async () => {
+  await memory.clearMemory();
   recognizeMock.mockReset();
   readMock.mockClear();
   mockImage.getBuffer.mockClear();
