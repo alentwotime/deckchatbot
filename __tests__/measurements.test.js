@@ -137,6 +137,15 @@ describe('server edge cases', () => {
     expect(res.body.error).toMatch(/Error digitalizing drawing/);
   });
 
+  test('/digitalize-drawing handles image read failure', async () => {
+    readMock.mockImplementationOnce(() => Promise.reject(new Error('read fail')));
+    const res = await request(app)
+      .post('/digitalize-drawing')
+      .attach('image', Buffer.from('img'), 'draw.png');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toMatch(/Error processing drawing/);
+  });
+
   test('/chatbot requires message', async () => {
     const res = await request(app).post('/chatbot').send({});
     expect(res.status).toBe(400);
