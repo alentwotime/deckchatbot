@@ -13,6 +13,9 @@ const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
+const xss = require('xss-clean');
+const { clean: cleanXss } = require('xss-clean/lib/xss');
 const OpenAI = require('openai');
 const math = require('mathjs');
 =======
@@ -58,6 +61,16 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.disable('x-powered-by');
+app.use(xss());
+app.use((req, _res, next) => {
+  for (const key in req.headers) {
+    if (typeof req.headers[key] === 'string') {
+      req.headers[key] = cleanXss(req.headers[key]);
+    }
+  }
+  next();
+});
 app.use((req, _res, next) => {
   logger.http(`${req.method} ${req.url}`);
   next();
@@ -65,6 +78,8 @@ app.use((req, _res, next) => {
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+app.use('/chatbot', rateLimit({ windowMs: 60_000, max: 20 }));
 
  codex/create-boilerplate-folder-structure-with-files
 const {
@@ -405,102 +420,53 @@ app.post('/upload-measurements', upload.single('image'), [
 });
  main
 
-app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Please upload an image.' });
-    }
-    const img = await Jimp.read(req.file.buffer);
-    img.greyscale().contrast(1).normalize().threshold({ max: 200 });
- codex/suggest-improvements-for-bot-logic
-    const buffer = await new Promise((resolve, reject) => {
-      img.getBuffer('image/png', (err, data) => {
-        if (err) return reject(err);
-        resolve(data);
-=======
 
-    const buffer = await new Promise((resolve, reject) => {
-      img.getBuffer('image/png', (err, buf) => {
-        if (err) return reject(err);
-        resolve(buf);
- main
-      });
-    });
-    const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
-    await fs.promises.writeFile(tmpPath, buffer);
-    const svg = await new Promise((resolve, reject) => {
-      potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, out) => {
-        fs.unlink(tmpPath, () => {});
-        if (err) return reject(new Error('digitalize'));
-        resolve(out);
-      });
-    });
- codex/suggest-improvements-for-bot-logic
-
-    const {
-      data: { text }
-    } = await Tesseract.recognize(buffer, 'eng', {
-      tessedit_pageseg_mode: 6,
-      tessedit_char_whitelist: '0123456789.',
-      logger: info => logger.debug(info)
-    });
-    const numbers = extractNumbers(text);
-    const points = [];
-    for (let i = 0; i < numbers.length; i += 2) {
-      if (numbers[i + 1] !== undefined) {
-        points.push({ x: numbers[i], y: numbers[i + 1] });
+app.post(
+  '/digitalize-drawing',
+  upload.single('image'),
+  [
+    body('image').custom((_, { req }) => {
+      if (!req.file) {
+        throw new Error('Image file is required');
       }
-    let ocrText = '';
+      return true;
+    })
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     try {
-      const {
-        data: { text }
-      } = await Tesseract.recognize(buffer, 'eng', {
-        tessedit_pageseg_mode: 6,
-        tessedit_char_whitelist: '0123456789.',
-        logger: info => logger.debug(info)
+      const img = await Jimp.read(req.file.buffer);
+      img.greyscale().contrast(1).normalize().threshold({ max: 200 });
+      const buffer = await new Promise((resolve, reject) => {
+        img.getBuffer('image/png', (err, buf) => {
+          if (err) return reject(err);
+          resolve(buf);
+        });
       });
-      ocrText = text;
-    } catch (ocrErr) {
-      logger.error(ocrErr);
-    }
-
-    let area = null;
-    let perimeter = null;
-    if (points.length >= 3) {
-      area = polygonArea(points);
-      perimeter = calculatePerimeter(points);
-    if (ocrText) {
-      const numbers = extractNumbers(ocrText);
-      const points = [];
-      for (let i = 0; i < numbers.length; i += 2) {
-        if (numbers[i + 1] !== undefined) {
-          points.push({ x: numbers[i], y: numbers[i + 1] });
-        }
-      }
-      if (points.length >= 3) {
-        area = polygonArea(points);
-        perimeter = calculatePerimeter(points);
+      const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
+      await fs.promises.writeFile(tmpPath, buffer);
+      const svg = await new Promise((resolve, reject) => {
+        potrace.trace(tmpPath, { threshold: 180, turdSize: 2 }, (err, out) => {
+          fs.unlink(tmpPath, () => {});
+          if (err) return reject(new Error('digitalize'));
+          resolve(out);
+        });
+      });
+      res.set('Content-Type', 'image/svg+xml');
+      res.send(svg);
+    } catch (err) {
+      logger.error(err.stack);
+      if (err.message === 'digitalize') {
+        res.status(500).json({ error: 'Error digitalizing drawing.' });
+      } else {
+        res.status(500).json({ error: 'Error processing drawing.' });
       }
     }
-
-=======
- main
-    res.set('Content-Type', 'image/svg+xml');
-    res.send(svg);
-  } catch (err) {
-    logger.error(err.stack);
- codex/suggest-improvements-for-bot-logic
-    res.status(500).json({ error: 'Error digitalizing drawing.' });
-=======
-    if (err.message === 'digitalize') {
-      res.status(500).json({ error: 'Error digitalizing drawing.' });
-    } else {
-      res.status(500).json({ error: 'Error processing drawing.' });
-    }
- main
   }
-});
-
+);
 app.post(
   '/chatbot',
   [body('message').exists({ checkFalsy: true }).withMessage('message is required')],

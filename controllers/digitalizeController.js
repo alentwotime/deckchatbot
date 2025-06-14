@@ -4,11 +4,13 @@ const os = require('os');
 const Jimp = require('jimp');
 const potrace = require('potrace');
 const { logger } = require('../server.cjs');
+const { validationResult } = require('express-validator');
 
 async function digitalizeDrawing(req, res) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Please upload an image.' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
