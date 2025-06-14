@@ -25,10 +25,13 @@
       <input type="file" id="imageInput" accept="image/*" class="form-control d-inline w-auto">
       <button id="uploadBtn" type="button" onclick="uploadImage()" class="btn btn-primary ms-1">Upload Image</button>
     </div>
-    <div class="mt-3">
-      <input type="file" id="drawingInput" accept="image/*" class="form-control d-inline w-auto">
-      <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary ms-1">Upload Drawing</button>
+    <div class="mt-3" id="drawingArea">
+      <input type="file" id="drawingInput" accept="image/*" class="d-none">
+      <div id="drawingDropZone" class="drop-zone">Drop drawing here or click to select</div>
+      <img id="drawingPreview" alt="Drawing preview" class="img-fluid mt-2" style="display:none;">
+      <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary mt-2">Upload Drawing</button>
     </div>
+    <div id="processing" class="mt-2 text-center" style="display:none;">Processing...</div>
     <div id="digitalWrapper" class="mt-4 text-center">
       <h3>Digitalized Drawing</h3>
       <img id="digitalImage" alt="Digitalized drawing" class="img-fluid">
