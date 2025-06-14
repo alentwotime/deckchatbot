@@ -141,3 +141,29 @@ input:focus,
   white-space: nowrap;
   border: 0;
 }
+
+/* Layout tweaks for message input */
+#inputArea {
+  display: flex;
+  align-items: center;
+}
+
+#inputArea .form-control {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  #messages {
+    height: 40vh;
+  }
+
+  #inputArea {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #inputArea .form-control {
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+}
