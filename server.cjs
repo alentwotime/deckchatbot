@@ -16,6 +16,7 @@ const measurementRoutes = require('./routes/measurements');
 const shapeController = require('./controllers/shapeController'); // ✅ NEW
 const uploadDrawingRoutes = require('./routes/uploadDrawing');
 const deckCalcRoutes = require('./routes/deckCalc');
+const skirtingRoutes = require('./routes/skirting');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -49,6 +50,7 @@ app.post(
 );
 
 app.use('/calculate-deck', deckCalcRoutes);
+app.use('/calculate-skirting', skirtingRoutes);
 
 // Serve frontend files and uploads
 app.use(express.static(path.join(__dirname)));
