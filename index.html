@@ -11,7 +11,32 @@
   <div class="d-flex justify-content-end mb-3">
     <button id="themeToggle" class="btn btn-secondary btn-sm">Toggle Theme</button>
   </div>
-  <p class="note">To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.</p>
+  <p class="note">To analyze deck drawings, use the <strong>Upload Drawing</strong> button below. Uploading images does not work through this text chat.</p>
+  <div class="text-center mb-3">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#drawingModal">Upload Drawing</button>
+  </div>
+
+  <div class="modal fade" id="drawingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upload Drawing</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="drawingArea">
+          <input type="file" id="drawingInput" accept="image/*" class="d-none">
+          <div id="drawingDropZone" class="drop-zone">Drop drawing here or click to select</div>
+          <img id="drawingPreview" alt="Drawing preview" class="img-fluid mt-2" style="display:none;">
+          <div class="progress mt-3" id="uploadProgressBar" style="display:none; height: 20px;">
+            <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary">Upload Drawing</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="chat">
     <h2>Decking Chatbot</h2>
     <div id="messages"></div>
@@ -25,18 +50,12 @@
       <input type="file" id="imageInput" accept="image/*" class="form-control d-inline w-auto">
       <button id="uploadBtn" type="button" onclick="uploadImage()" class="btn btn-primary ms-1">Upload Image</button>
     </div>
-    <div class="mt-3" id="drawingArea">
-      <input type="file" id="drawingInput" accept="image/*" class="d-none">
-      <div id="drawingDropZone" class="drop-zone">Drop drawing here or click to select</div>
-      <img id="drawingPreview" alt="Drawing preview" class="img-fluid mt-2" style="display:none;">
-      <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary mt-2">Upload Drawing</button>
-    </div>
-    <div id="processing" class="mt-2 text-center" style="display:none;">Processing...</div>
     <div id="digitalWrapper" class="mt-4 text-center">
       <h3>Digitalized Drawing</h3>
       <img id="digitalImage" alt="Digitalized drawing" class="img-fluid">
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
