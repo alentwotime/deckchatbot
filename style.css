@@ -1,26 +1,46 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --chat-bg: #ffffff;
+  --border-color: #ccc;
+  --message-user-bg: #e1ffc7;
+  --message-bot-bg: #f1f1f1;
+}
+
+body[data-theme='dark'] {
+  --bg-color: #000000;
+  --text-color: #eeeeee;
+  --chat-bg: #222222;
+  --border-color: #444444;
+  --message-user-bg: #4a90e2;
+  --message-bot-bg: #444444;
+}
+
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 20px;
-  background: linear-gradient(135deg, #a2d9ff, #f0f9ff);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 #chat {
   max-width: 600px;
   margin: auto;
-  background: #fff;
+  background: var(--chat-bg);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 #messages {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   padding: 10px;
   height: 300px;
   overflow-y: auto;
   margin-bottom: 10px;
-  background: #f9f9f9;
+  background: var(--chat-bg);
 }
 
 .message {
@@ -31,23 +51,20 @@ body {
 }
 
 .message.user {
-  background: #e1ffc7;
+  background: var(--message-user-bg);
   text-align: right;
 }
 
 .message.bot {
-  background: #ececec;
+  background: var(--message-bot-bg);
   text-align: left;
 }
 
- codex/improve-html-design-appeal
 #digitalWrapper {
   max-width: 600px;
   margin: 20px auto;
 }
 
-=======
- main
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
