@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "test": "jest"
+    "test": "jest",
+    "backup": "node scripts/backupMeasurements.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
