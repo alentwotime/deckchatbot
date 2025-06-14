@@ -26,3 +26,5 @@ npm test
 
 - [Master Prompt](docs/MASTER_PROMPT.md)
 - [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
+- **API:** `POST /calculate-skirting` – estimate skirting materials using feet/inch measurements
+- Uploads mentioning "skirting" auto-return perimeter and panel estimates
