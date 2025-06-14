@@ -26,3 +26,4 @@ npm test
 
 - [Master Prompt](docs/MASTER_PROMPT.md)
 - [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
+- [File Upload Troubleshooting](docs/FILE_UPLOAD_TROUBLESHOOTING.md)
