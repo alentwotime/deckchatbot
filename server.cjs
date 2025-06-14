@@ -9,6 +9,7 @@ const express = require('express');
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
@@ -56,6 +57,7 @@ const port = 3000;
  main
 
 app.use(cors());
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, _res, next) => {
