@@ -61,6 +61,13 @@ body {
   animation: fadeIn 0.3s ease-in-out;
 }
 
+.message .timestamp {
+  display: block;
+  font-size: 0.75em;
+  color: #555;
+  margin-top: 2px;
+}
+
 .message.user {
   background: var(--message-user-bg);
   text-align: right;
