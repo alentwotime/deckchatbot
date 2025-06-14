@@ -1,62 +1,74 @@
+const { parseMeasurement } = require('../utils/extract');
+const { calculateSkirtingMetrics, ftIn } = require('../utils/skirting');
+
 function toFeetDecimal(feet, inches) {
   return parseFloat(feet) + parseFloat(inches || 0) / 12;
 }
 
-function ftIn(val) {
-  const ft = Math.floor(val);
-  const inches = Math.round((val - ft) * 12);
-  return `${ft}' ${inches}"`;
+// Allow a single value like "10' 6\"" or 10.5 to be converted to feet
+function normalizeMeasurement(ft, inch, combined) {
+  if (combined != null) {
+    const parsed = parseMeasurement(String(combined));
+    if (typeof parsed === 'number' && !Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (ft != null) {
+    return toFeetDecimal(ft, inch);
+  }
+  return null;
 }
 
 function calculateSkirting(req, res) {
   const {
+    length,
     lengthFt,
     lengthIn = 0,
+    width,
     widthFt,
     widthIn = 0,
+    height,
     heightFt,
     heightIn = 0,
     sides = 4,
     material
   } = req.body;
 
+  const lengthVal = normalizeMeasurement(lengthFt, lengthIn, length);
+  const widthVal = normalizeMeasurement(widthFt, widthIn, width);
+  const heightVal = normalizeMeasurement(heightFt, heightIn, height);
+
   if (
-    lengthFt == null ||
-    widthFt == null ||
-    heightFt == null ||
+    lengthVal == null ||
+    widthVal == null ||
+    heightVal == null ||
     !material ||
     ![3, 4].includes(Number(sides))
   ) {
     return res.status(400).json({
-      errors: [{ msg: 'lengthFt, widthFt, heightFt, sides (3 or 4) and material are required' }]
+      errors: [{ msg: 'length, width, height and material are required. Sides must be 3 or 4.' }]
     });
   }
 
-  const length = toFeetDecimal(lengthFt, lengthIn);
-  const width = toFeetDecimal(widthFt, widthIn);
-  const height = toFeetDecimal(heightFt, heightIn);
+  const lengthFeet = lengthVal;
+  const widthFeet = widthVal;
+  const heightFeet = heightVal;
 
-  const perimeter =
-    Number(sides) === 4 ? 2 * (length + width) : 2 * width + length;
-  const skirtingArea = perimeter * height;
-  const panelsNeeded = Math.ceil(skirtingArea / 32);
-
-  let note = '';
-  if (material === 'Composite') {
-    note = 'Composite skirting is durable but heavier — framing may be required.';
-  } else if (material === 'PVC') {
-    note = 'PVC skirting is lightweight and rot-proof, ideal for wet areas.';
-  } else if (material === 'Mineral Board') {
-    note = 'Mineral Board is highly fire- and insect-resistant, great for premium projects.';
-  }
+  const result = calculateSkirtingMetrics({
+    length: lengthFeet,
+    width: widthFeet,
+    height: heightFeet,
+    sides,
+    material
+  });
 
   res.json({
-    perimeter: ftIn(perimeter),
-    skirtingArea: skirtingArea.toFixed(2),
-    panelsNeeded,
-    material,
-    tip: 'Always round up and order 1–2 extra panels for cutting and waste.',
-    note
+    perimeter: ftIn(result.perimeter),
+    skirtingArea: result.skirtingArea.toFixed(2),
+    panelsNeeded: result.panelsNeeded,
+    material: result.material,
+    tip: result.tip,
+    note: result.note
   });
 }
 
