@@ -73,6 +73,23 @@ describe('server edge cases', () => {
     expect(res.body.error).toMatch(/Unsupported shape type/);
   });
 
+  test('/upload-measurements rejects non-image', async () => {
+    const res = await request(app)
+      .post('/upload-measurements')
+      .attach('image', Buffer.from('text'), 'file.txt');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/Only image files/);
+  });
+
+  test('/upload-measurements rejects large file', async () => {
+    const big = Buffer.alloc(6 * 1024 * 1024);
+    const res = await request(app)
+      .post('/upload-measurements')
+      .attach('image', big, 'big.png');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/File too large/);
+  });
+
   test('/upload-measurements not enough numbers', async () => {
     recognizeMock.mockResolvedValue({ data: { text: '1 2 3 4' } });
     const res = await request(app)
