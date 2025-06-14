@@ -74,14 +74,15 @@ async function uploadImage() {
 async function uploadDrawing() {
   const drawInput = document.getElementById('drawingInput');
   const preview = document.getElementById('drawingPreview');
-  const processing = document.getElementById('processing');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const modalEl = document.getElementById('drawingModal');
   const file = drawInput.files[0];
   if (!file) {
     alert('Please select a drawing to upload.');
     return;
   }
 
-  processing.style.display = 'block';
+  progressBar.style.display = 'block';
   const formData = new FormData();
   formData.append('image', file);
 
@@ -95,6 +96,9 @@ async function uploadDrawing() {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       document.getElementById('digitalImage').src = url;
+      if (window.bootstrap) {
+        bootstrap.Modal.getInstance(modalEl).hide();
+      }
     } else {
       const data = await response.json();
       alert(data.error || 'Error processing drawing.');
@@ -102,7 +106,7 @@ async function uploadDrawing() {
   } catch (err) {
     alert('Error processing drawing.');
   } finally {
-    processing.style.display = 'none';
+    progressBar.style.display = 'none';
     drawInput.value = '';
     preview.style.display = 'none';
   }
