@@ -20,3 +20,4 @@ Run the test suite with:
 ```bash
 npm test
 ```
+## Backup\nRun `npm run backup` to export saved measurements to measurement_backup.json.
