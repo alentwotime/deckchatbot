@@ -6,8 +6,13 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
+ feature/skirting-estimator
+    "dev": "nodemon server.cjs",
+    "test": "jest"
+=======
     "test": "jest",
     "backup": "node scripts/backupMeasurements.js"
+ main
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
@@ -44,6 +49,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "nodemon": "^3.1.10",
     "supertest": "^6.3.3"
   }
 }
