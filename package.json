@@ -15,7 +15,11 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
+ codex/implement-security-enhancements-with-input-validation
+    "express-rate-limit": "^7.5.0",
+=======
     "express-rate-limit": "^6.11.2",
+ main
     "express-validator": "^7.2.1",
     "franc": "^6.2.0",
     "fuse.js": "^7.1.0",
@@ -34,8 +38,13 @@
     "socket.io": "^4.8.1",
     "speech-to-text": "^2.9.1",
     "tesseract.js": "^4.1.4",
+ codex/implement-security-enhancements-with-input-validation
+    "winston": "^3.10.0",
+    "xss-clean": "^0.1.4"
+=======
     "uuid": "^11.1.0",
     "winston": "^3.10.0"
+ main
   },
   "devDependencies": {
     "jest": "^29.7.0",

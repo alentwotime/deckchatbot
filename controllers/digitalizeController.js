@@ -3,13 +3,19 @@ const path = require('path');
 const os = require('os');
 const Jimp = require('jimp');
 const potrace = require('potrace');
+ codex/implement-security-enhancements-with-input-validation
+const { logger } = require('../server.cjs');
+const { validationResult } = require('express-validator');
+=======
 const logger = require('../utils/logger');
 const { cleanTempFile } = require('../utils/tmp-cleaner');
+ main
 
 async function digitalizeDrawing(req, res) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Please upload an image.' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
