@@ -1,9 +1,3 @@
-const form = document.getElementById('chatForm');
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  sendMessage();
-});
-
 function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -35,6 +29,11 @@ async function sendMessage() {
   input.value = '';
 }
 
+document.getElementById('chatForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  sendMessage();
+});
+
 async function uploadImage() {
   const fileInput = document.getElementById('imageInput');
   const file = fileInput.files[0];
@@ -52,23 +51,23 @@ async function uploadImage() {
       body: formData
     });
     const data = await response.json();
-    let text;
     if (data.error) {
-      text = `Error: ${data.error}`;
+      appendMessage('bot', `Error: ${data.error}`);
     } else {
-      text = `Outer Deck Area: ${data.outerDeckArea} sq ft\n` +
+      let text = `Outer Deck Area: ${data.outerDeckArea} sq ft\n` +
         `Pool Area: ${data.poolArea} sq ft\n` +
         `Usable Deck Area: ${data.usableDeckArea} sq ft\n` +
         `Railing Footage: ${data.railingFootage} ft`;
       if (data.explanation) text += `\n${data.explanation}`;
       if (data.warning) text += `\n${data.warning}`;
+      appendMessage('bot', text);
     }
-    appendMessage('bot', text);
   } catch (err) {
     appendMessage('bot', `Error: ${err.message}`);
   }
 
-  document.getElementById('messages').scrollTop = messagesDiv.scrollHeight;
+  const messagesDiv = document.getElementById('messages');
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
   fileInput.value = '';
 }
 
@@ -89,12 +88,7 @@ async function uploadDrawing() {
   });
 
   if (response.ok) {
- codex/improve-html-design-appeal
-    const svgText = await response.text();
-    const blob = new Blob([svgText], { type: 'image/svg+xml' });
-=======
     const blob = await response.blob();
- main
     const url = URL.createObjectURL(blob);
     document.getElementById('digitalImage').src = url;
   } else {
@@ -104,3 +98,17 @@ async function uploadDrawing() {
 
   drawInput.value = '';
 }
+
+function toggleTheme() {
+  const body = document.body;
+  const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+}
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('theme') || 'light';
+  document.body.setAttribute('data-theme', saved);
+});
