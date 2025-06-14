@@ -9,7 +9,7 @@
 </head>
 <body>
   <div class="d-flex justify-content-end mb-3">
-    <button id="themeToggle" class="btn btn-secondary btn-sm">Toggle Theme</button>
+    <button id="themeToggle" class="btn btn-secondary btn-sm" type="button" aria-label="Toggle dark or light theme" aria-pressed="false">Toggle Theme</button>
   </div>
  codex/expand-chat-container-responsiveness
   <p class="note">To analyze deck drawings, select an image file and click <strong>Upload Image</strong>. Uploading images does not work through this text chat.</p>
@@ -49,19 +49,21 @@
     <form id="chatForm" autocomplete="off">
       <div id="inputArea">
         <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" class="form-control me-2">
-        <button id="sendBtn" type="submit" class="btn btn-success">Send</button>
+        <button id="sendBtn" type="submit" class="btn btn-success" aria-label="Send message">Send</button>
       </div>
     </form>
     <div class="mt-3">
-      <input type="file" id="imageInput" accept="image/*" class="form-control d-inline w-auto">
-      <button id="uploadBtn" type="button" onclick="uploadImage()" class="btn btn-primary ms-1">Upload Image</button>
+      <label for="imageInput" class="visually-hidden">Select deck image</label>
+      <input type="file" id="imageInput" accept="image/*" class="form-control d-inline w-auto" aria-label="Deck image file">
+      <button id="uploadBtn" type="button" onclick="uploadImage()" class="btn btn-primary ms-1" aria-label="Upload selected deck image">Upload Image</button>
     </div>
  codex/expand-chat-container-responsiveness
     <div class="mt-3" id="drawingArea">
-      <input type="file" id="drawingInput" accept="image/*" class="d-none">
-      <div id="drawingDropZone" class="drop-zone">Drop drawing here or click to select</div>
+      <label for="drawingInput" class="visually-hidden">Select deck drawing</label>
+      <input type="file" id="drawingInput" accept="image/*" class="d-none" aria-label="Deck drawing file">
+      <div id="drawingDropZone" class="drop-zone" role="button" tabindex="0" aria-label="Drop drawing here or click to select">Drop drawing here or click to select</div>
       <img id="drawingPreview" alt="Drawing preview" class="img-fluid mt-2" style="display:none;">
-      <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary mt-2">Upload Drawing</button>
+      <button id="drawingBtn" type="button" onclick="uploadDrawing()" class="btn btn-primary mt-2" aria-label="Upload selected drawing">Upload Drawing</button>
     </div>
     <div id="processing" class="mt-2 text-center" style="display:none;">Processing...</div>
     </div><!-- end chat -->
