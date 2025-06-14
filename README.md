@@ -7,18 +7,15 @@ This project provides a simple Express server with a chatbot interface for deck 
    ```bash
    npm install
    ```
- codex/add-rate-limiting-middleware
 2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`.
-   You can also adjust `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` to customize
-   request rate limiting.
-=======
-2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`. The server will
-   fail to start if this variable is not provided.
- main
+   You can also adjust `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX` to customize request rate limiting.
 3. Start the server:
    ```bash
    npm start
    ```
+4. Visit `http://localhost:3000` in your browser to use the chat interface.
+   **Do not open `index.html` directly from your filesystem**; uploads require
+   the page to be served by the running server.
 
 The app will be available at `http://localhost:3000` or the port specified by `PORT`.
 

@@ -11,7 +11,15 @@ const path = require('path');
 
 const app = express();
 
-app.use(helmet());
+const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+cspDirectives['img-src'] = ["'self'", 'data:', 'blob:'];
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: cspDirectives
+    }
+  })
+);
 app.use(cors());
 app.use(compression());
 const limiter = rateLimit({
