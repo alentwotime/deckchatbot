@@ -23,7 +23,7 @@ jest.mock('jimp', () => {
     getBuffer: jest.fn((type, cb) => cb(null, Buffer.from('img')))
   };
   const readMock = jest.fn(() => Promise.resolve(mockImage));
-  return { read: readMock, __mockImage: mockImage, __readMock: readMock };
+  return { Jimp: { read: readMock }, __mockImage: mockImage, __readMock: readMock };
 });
 
 jest.mock('potrace', () => ({
