@@ -81,15 +81,67 @@
           <label class="visually-hidden" for="shape">Shape</label>
           <select id="shape" class="form-select">
             <option value="rectangle" selected>Rectangle</option>
+            <option value="lshape">L-Shape</option>
+            <option value="octagon">Octagon</option>
+          </select>
+        </div>
+        <div class="col-auto shape-rect">
+          <label class="visually-hidden" for="length">Length (ft)</label>
+          <input type="number" min="1" step="0.1" id="length" class="form-control" placeholder="Length (ft)" />
+        </div>
+        <div class="col-auto shape-rect">
+          <label class="visually-hidden" for="width">Width (ft)</label>
+          <input type="number" min="1" step="0.1" id="width" class="form-control" placeholder="Width (ft)" />
+        </div>
+        <div class="col-auto shape-l">
+          <label class="visually-hidden" for="length1">Rect 1 Length (ft)</label>
+          <input type="number" min="1" step="0.1" id="length1" class="form-control" placeholder="Rect 1 Length" />
+        </div>
+        <div class="col-auto shape-l">
+          <label class="visually-hidden" for="width1">Rect 1 Width (ft)</label>
+          <input type="number" min="1" step="0.1" id="width1" class="form-control" placeholder="Rect 1 Width" />
+        </div>
+        <div class="col-auto shape-l">
+          <label class="visually-hidden" for="length2">Rect 2 Length (ft)</label>
+          <input type="number" min="1" step="0.1" id="length2" class="form-control" placeholder="Rect 2 Length" />
+        </div>
+        <div class="col-auto shape-l">
+          <label class="visually-hidden" for="width2">Rect 2 Width (ft)</label>
+          <input type="number" min="1" step="0.1" id="width2" class="form-control" placeholder="Rect 2 Width" />
+        </div>
+        <div class="col-auto shape-oct">
+          <label class="visually-hidden" for="side">Side (ft)</label>
+          <input type="number" min="1" step="0.1" id="side" class="form-control" placeholder="Side Length" />
+        </div>
+        <div class="col-auto">
+          <label class="visually-hidden" for="orientation">Board Orientation</label>
+          <select id="orientation" class="form-select">
+            <option value="horizontal" selected>Horizontal</option>
+            <option value="vertical">Vertical</option>
           </select>
         </div>
         <div class="col-auto">
-          <label class="visually-hidden" for="length">Length (ft)</label>
-          <input type="number" min="1" step="0.1" id="length" class="form-control" placeholder="Length (ft)" required />
+          <label class="visually-hidden" for="attachment">Attachment</label>
+          <select id="attachment" class="form-select">
+            <option value="attached" selected>Attached</option>
+            <option value="freestanding">Freestanding</option>
+          </select>
         </div>
         <div class="col-auto">
-          <label class="visually-hidden" for="width">Width (ft)</label>
-          <input type="number" min="1" step="0.1" id="width" class="form-control" placeholder="Width (ft)" required />
+          <label class="visually-hidden" for="height">Height (ft)</label>
+          <input type="number" min="0" step="0.1" id="height" class="form-control" placeholder="Height" />
+        </div>
+        <div class="col-auto">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="railings" checked />
+            <label class="form-check-label" for="railings">Railings</label>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="stairs" />
+            <label class="form-check-label" for="stairs">Stairs</label>
+          </div>
         </div>
         <div class="col-auto">
           <label class="visually-hidden" for="boardWidth">Board Width (in)</label>
@@ -114,6 +166,10 @@
         </div>
       </form>
       <canvas id="deckCanvas" width="400" height="300" class="border mt-3"></canvas>
+      <div class="mt-2">
+        <button type="button" id="exportBtn" class="btn btn-secondary btn-sm">Export PNG</button>
+        <button type="button" id="printBtn" class="btn btn-secondary btn-sm ms-1">Print</button>
+      </div>
       <div id="calcResults" class="mt-3"></div>
     </div>
   </div>
