@@ -43,15 +43,21 @@ const logger = winston.createLogger({
 });
 
 const app = express();
+ codex/suggest-improvements-for-bot-logic
+=======
  codex/create-boilerplate-folder-structure-with-files
 const port = config.PORT;
 =======
+ main
  codex/suggest-improvements-for-bot-logic
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const port = process.env.PORT || 3000;
 =======
 const port = 3000;
+ main
+ codex/suggest-improvements-for-bot-logic
+=======
  main
  main
 
@@ -450,6 +456,9 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       if (numbers[i + 1] !== undefined) {
         points.push({ x: numbers[i], y: numbers[i + 1] });
       }
+ codex/suggest-improvements-for-bot-logic
+    }
+=======
     let ocrText = '';
     try {
       const {
@@ -464,11 +473,14 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
       logger.error(ocrErr);
     }
 
+ main
     let area = null;
     let perimeter = null;
     if (points.length >= 3) {
       area = polygonArea(points);
       perimeter = calculatePerimeter(points);
+ codex/suggest-improvements-for-bot-logic
+=======
     if (ocrText) {
       const numbers = extractNumbers(ocrText);
       const points = [];
@@ -481,6 +493,7 @@ app.post('/digitalize-drawing', upload.single('image'), async (req, res) => {
         area = polygonArea(points);
         perimeter = calculatePerimeter(points);
       }
+ main
     }
 
 =======
