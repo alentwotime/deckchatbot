@@ -34,7 +34,10 @@ async function sendMessage() {
     const data = await response.json();
     appendMessage('bot', data.response || `Error: ${data.error || 'Unable to get response.'}`);
   } catch (err) {
-    appendMessage('bot', `Error: ${err.message}`);
+    const msg = err instanceof TypeError
+      ? 'Unable to reach server. Make sure it is running.'
+      : err.message;
+    appendMessage('bot', `Error: ${msg}`);
   }
 
   const messagesDiv = document.getElementById('messages');
@@ -76,7 +79,10 @@ async function uploadImage() {
       appendMessage('bot', text);
     }
   } catch (err) {
-    appendMessage('bot', `Error: ${err.message}`);
+    const msg = err instanceof TypeError
+      ? 'Unable to reach server. Make sure it is running.'
+      : err.message;
+    appendMessage('bot', `Error: ${msg}`);
   }
 
   const messagesDiv = document.getElementById('messages');
@@ -117,7 +123,10 @@ async function uploadDrawing() {
       alert(data.error || 'Error processing drawing.');
     }
   } catch (err) {
-    alert('Error processing drawing.');
+    const msg = err instanceof TypeError
+      ? 'Unable to reach server. Make sure it is running.'
+      : 'Error processing drawing.';
+    alert(msg);
   } finally {
     progressBar.style.display = 'none';
     drawInput.value = '';
