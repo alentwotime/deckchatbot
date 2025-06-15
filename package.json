@@ -2,7 +2,7 @@
   "name": "decking-chatbot",
   "version": "1.0.0",
   "description": "Decking Sales Chatbot Server",
-  "main": "server.cjs",
+  "main": "index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
