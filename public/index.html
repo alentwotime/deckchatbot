@@ -35,10 +35,8 @@
     </div>
 
     <div class="results" id="results">
-      <strong>Surface Area:</strong> <span id="area">--</span> sq ft<br />
-      <strong>Fascia Needed:</strong> <span id="fascia">--</span> linear ft<br />
-      <strong>Steps:</strong> <span id="steps">--</span><br />
-      <strong>Railing:</strong> <span id="railing">--</span> linear ft
+      <strong>Uploaded File:</strong>
+      <a id="fileLink" href="#" target="_blank">View</a>
     </div>
   </div>
 
@@ -66,16 +64,12 @@
 
         if (data.error) return alert("Upload failed: " + data.error);
 
-        previewImg.src = `/uploads/${data.filename}`;
+        previewImg.src = data.filePath;
         previewImg.style.display = 'block';
-
-        document.getElementById('area').textContent = data.squareFootage;
-        document.getElementById('fascia').textContent = data.fascia;
-        document.getElementById('steps').textContent = data.steps;
-        document.getElementById('railing').textContent = data.railing;
+        document.getElementById('fileLink').href = data.filePath;
         resultsBox.style.display = 'block';
 
-        alert("✅ Drawing uploaded and analyzed successfully!");
+        alert("✅ Drawing uploaded successfully!");
 
       } catch (err) {
         spinner.style.display = 'none';
