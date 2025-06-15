@@ -8,6 +8,7 @@ This project provides a simple Express server with a chatbot interface for deck 
    npm install
    ```
 2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`.
+   You can also set `MEM_DB` to choose a custom path for the SQLite database.
 3. Start the server:
    ```bash
    npm start
@@ -31,4 +32,7 @@ Run `npm run backup` to export saved measurements to measurement_backup.json.
 ## API
 - **API:** `POST /calculate-skirting` – estimate skirting materials using feet/inch measurements
 - Uploads mentioning "skirting" auto-return perimeter and panel estimates
+
+### Direct start
+Running `node server.cjs` starts a single-process server if you prefer not to use the cluster entry point.
 

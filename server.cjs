@@ -69,3 +69,12 @@ app.use((err, req, res, next) => {
 
 // Export for index.js (clustered start)
 module.exports = { app, logger };
+
+// Allow running `node server.cjs` directly for a single-process server
+if (require.main === module) {
+  const config = require('./config');
+  const PORT = config.PORT || 3000;
+  app.listen(PORT, () => {
+    logger.info(`✅ Server running at http://localhost:${PORT}`);
+  });
+}
