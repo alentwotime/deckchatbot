@@ -29,6 +29,7 @@ Run `npm run backup` to export saved measurements to measurement_backup.json.
 - [Master Prompt](docs/MASTER_PROMPT.md)
 - [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
 - [File Upload Troubleshooting](docs/FILE_UPLOAD_TROUBLESHOOTING.md)
+- [Setup Troubleshooting](docs/SETUP_TROUBLESHOOTING.md)
 ## API
 - **API:** `POST /calculate-skirting` – estimate skirting materials using feet/inch measurements
 - Uploads mentioning "skirting" auto-return perimeter and panel estimates
