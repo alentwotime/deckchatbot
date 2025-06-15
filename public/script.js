@@ -49,7 +49,7 @@ function handleUpload(file) {
   formData.append('drawing', file);
 
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/uploadDrawing', true);
+  xhr.open('POST', '/upload-drawing', true);
 
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {

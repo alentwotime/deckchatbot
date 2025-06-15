@@ -1,4 +1,9 @@
 module.exports = (req, res, next) => {
+  const required = process.env.API_KEY;
+  if (!required) {
+    return next();
+  }
+
   const authHeader = req.headers['authorization'];
   let token;
   if (authHeader) {
@@ -8,7 +13,7 @@ module.exports = (req, res, next) => {
     }
   }
 
-  if (!token || token !== process.env.API_KEY) {
+  if (!token || token !== required) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
