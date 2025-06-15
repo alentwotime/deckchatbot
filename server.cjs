@@ -6,22 +6,27 @@ const compression = require('compression');
 const multer = require('multer');
 const path = require('path');
 const logger = require('./utils/logger');
+const config = require('./config');
 
-// 🔌 Initializes the SQLite database and creates tables
+// 🔌 Initialize SQLite DB and tables
 require('./utils/db');
-
-const chatbotRoutes = require('./routes/chatbot');
-const digitalizeController = require('./controllers/digitalizeController');
-const measurementRoutes = require('./routes/measurements');
-const shapeController = require('./controllers/shapeController');
-const uploadDrawingRoutes = require('./routes/uploadDrawing');
-const deckCalcRoutes = require('./routes/deckCalc');
-const skirtingRoutes = require('./routes/skirting');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Middleware
+// 🌐 Global Middleware
+const auth = require('./middleware/auth');
+const rateLimiter = require('./middleware/rateLimiter');
+const requestLogger = require('./middleware/requestLogger');
+const errorLogger = require('./middleware/errorLogger');
+
+// 📦 Route-level Controllers (for inline POSTs)
+const shapeController = require('./controllers/shapeController');
+
+// 🛣️ Full Route Index
+const routes = require('./routes');
+
+// 🌍 Core Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -29,48 +34,46 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('dev'));
 
-// API Routes
-app.use('/chatbot', chatbotRoutes);
-app.post('/digitalize-drawing', upload.single('image'), digitalizeController.digitalizeDrawing);
-app.use('/upload-drawing', upload.single('image'), uploadDrawingRoutes);
-app.use('/upload-measurements', measurementRoutes);
-app.post('/calculate-multi-shape', shapeController.calculateMultiShape);
-app.use('/calculate-deck', deckCalcRoutes);
-app.use('/calculate-skirting', skirtingRoutes);
+// 🔐 API Key Auth (enabled globally)
+app.use(auth);
 
-// Static File Serving (Frontend)
+// 🧯 Request Rate Limiting & Logging
+app.use(rateLimiter);
+app.use(requestLogger);
+
+// 🧭 API Routes
+app.use(routes);
+app.post('/calculate-multi-shape', shapeController.calculateMultiShape);
+
+// 🖼️ Static Frontend Files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// Optional: fallback to index.html for client-side routing
+// 🔁 Fallback for client-side routing (SPA support)
 app.get('*', (req, res, next) => {
   if (req.accepts('html')) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    logger.info('📄 Served frontend index.html');
   } else {
     next();
   }
 });
 
-// 404 Handler
+// ❌ 404 Handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error Handler
-app.use((err, req, res, next) => {
-  logger.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong' });
-});
+// 💥 Global Error Logger
+app.use(errorLogger);
 
-// Export for cluster usage
+// 📦 Export for use in index.js (clustering)
 module.exports = { app, logger };
 
-// Allow direct server startup
+// 🚀 Allow direct run (no cluster)
 if (require.main === module) {
-  const config = require('./config');
   const PORT = config.PORT || 3000;
   app.listen(PORT, () => {
     logger.info(`✅ Server running at http://localhost:${PORT}`);
   });
 }
-console.log('💡 Static middleware initialized');

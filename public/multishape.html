@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Shape Deck Builder</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .shape-block { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; }
+    .hidden { display: none; }
+    label { display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🧱 Deck Shape Builder</h1>
+
+  <form id="shapeForm">
+    <label>Project Label:
+      <input type="text" name="label" placeholder="e.g. Backyard A" required />
+    </label>
+
+    <div id="shapesContainer"></div>
+
+    <button type="button" id="addShapeBtn">+ Add Shape</button>
+    <button type="submit">Submit Shapes</button>
+  </form>
+
+  <pre id="botResponse"></pre>
+
+  <script>
+    let shapeCount = 0;
+
+    document.getElementById('addShapeBtn').addEventListener('click', () => {
+      const container = document.getElementById('shapesContainer');
+      const block = document.createElement('div');
+      block.className = 'shape-block';
+      block.innerHTML = `
+        <label>Shape Type:
+          <select name="shapes[${shapeCount}][type]" class="shape-select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="lshape">L-Shape</option>
+            <option value="octagon">Octagon</option>
+          </select>
+        </label>
+
+        <div class="dims dims-rectangle">
+          <label>Width: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][width]" required /></label>
+          <label>Height: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][height]" required /></label>
+        </div>
+
+        <div class="dims dims-circle hidden">
+          <label>Radius: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][radius]" /></label>
+        </div>
+
+        <div class="dims dims-lshape hidden">
+          <label>Length 1: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][length1]" /></label>
+          <label>Width 1: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][width1]" /></label>
+          <label>Length 2: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][length2]" /></label>
+          <label>Width 2: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][width2]" /></label>
+        </div>
+
+        <div class="dims dims-octagon hidden">
+          <label>Side: <input type="number" step="0.01" name="shapes[${shapeCount}][dimensions][side]" /></label>
+        </div>
+      `;
+      container.appendChild(block);
+      shapeCount++;
+    });
+
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('shape-select')) {
+        const block = e.target.closest('.shape-block');
+        block.querySelectorAll('.dims').forEach(d => d.classList.add('hidden'));
+        block.querySelector(`.dims-${e.target.value}`).classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('shapeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const shapes = [];
+      const entries = Object.fromEntries(formData);
+      const label = entries.label;
+
+      for (let i = 0; i < shapeCount; i++) {
+        const type = formData.get(`shapes[${i}][type]`);
+        const dims = {};
+
+        for (const key of formData.keys()) {
+          const match = key.match(`shapes\\[${i}\\]\\[dimensions\\]\\[(.*?)\\]`);
+          if (match) dims[match[1]] = parseFloat(formData.get(key));
+        }
+
+        if (type) shapes.push({ type, dimensions: dims });
+      }
+
+      const response = await fetch('/calculate-multi-shape', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer revamp123secure',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ shapes, label })
+      });
+
+      const result = await response.json();
+      document.getElementById('botResponse').textContent = JSON.stringify(result, null, 2);
+    });
+  </script>
+</body>
+</html>

@@ -137,3 +137,20 @@ dist
 .env
 node_modules/
 memory.sqlite
+deckchatbot.db
+*.sqlite-journal
+.DS_Store
+Thumbs.db
+start.deckchatbot.bat
+*.sh
+# Ignore local DBs and cache
+deckchatbot.db
+*.sqlite-journal
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Local helper scripts (optional)
+*.sh
+*.bat

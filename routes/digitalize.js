@@ -5,7 +5,9 @@ const { digitalizeDrawing } = require('../controllers/digitalizeController');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
-const validate = [
+
+// 🧪 Validation: Ensure image file exists
+const validateImage = [
   body('image').custom((_, { req }) => {
     if (!req.file) {
       throw new Error('Image file is required');
@@ -13,6 +15,8 @@ const validate = [
     return true;
   })
 ];
-router.post('/', upload.single('image'), validate, digitalizeDrawing);
+
+// POST /digitalize-drawing
+router.post('/', upload.single('image'), validateImage, digitalizeDrawing);
 
 module.exports = router;
