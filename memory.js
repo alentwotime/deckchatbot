@@ -1,7 +1,8 @@
 const path = require('path');
 const Database = require('better-sqlite3');
+const config = require('./config');
 
-const dbFile = process.env.MEM_DB || path.join(__dirname, 'memory.sqlite');
+const dbFile = config.MEM_DB || path.join(__dirname, 'memory.sqlite');
 const db = new Database(dbFile);
 
 db.exec(`
