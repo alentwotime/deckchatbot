@@ -5,9 +5,22 @@ const path = require('path');
 const db = new sqlite3.Database(path.resolve(__dirname, '../deckchatbot.db'), (err) => {
   if (err) {
     console.error('❌ Failed to connect to DB:', err.message);
+    process.exit(1); // Exit if database connection fails
   } else {
     console.log('✅ Connected to SQLite database');
   }
+});
+
+// Add graceful shutdown
+process.on('SIGINT', () => {
+  db.close((err) => {
+    if (err) {
+      console.error('Error closing database:', err.message);
+    } else {
+      console.log('Database connection closed.');
+    }
+    process.exit(0);
+  });
 });
 
 db.serialize(() => {

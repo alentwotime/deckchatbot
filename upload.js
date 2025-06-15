@@ -5,7 +5,9 @@ const spinner = document.getElementById('spinner');
 
 function handleFiles(files) {
   const file = files[0];
-  if (!file) return;
+  if (!file) {
+    return;
+  }
   fileInput.files = files;
   const reader = new FileReader();
   reader.onload = e => {

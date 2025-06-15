@@ -78,7 +78,7 @@ async function uploadMeasurements(req, res) {
     }
 
     const hasPool = /pool/i.test(text);
-    const midpoint = hasPool ? numbers.length / 2 : numbers.length;
+    const midpoint = hasPool ? Math.floor(numbers.length / 2) : numbers.length;
 
     const outerPoints = [];
     for (let i = 0; i < midpoint; i += 2) {
@@ -116,8 +116,8 @@ async function uploadMeasurements(req, res) {
       const width = numbers[2] || 0;
       const height = numbers[4] || 3; // default deck height
 
-      const perimeter = 2 * (length + width); // assuming 4 sides
-      const skirtingHeight = ftInToDecimal(height);
+      const perimeter = calculatePerimeter(outerPoints); // handles any polygon shape
+      const skirtingHeight = height;
       const skirtingArea = perimeter * skirtingHeight;
       const panelsNeeded = Math.ceil(skirtingArea / 32); // 4'x8' = 32 sq ft
 
@@ -148,6 +148,17 @@ async function uploadMeasurements(req, res) {
       fasciaBoardLength
     });
 
+    // Response JSON structure:
+    // {
+    //   outerDeckArea: string (total area of the outer deck in sq ft, 2 decimals),
+    //   poolArea: string (area of pool cutout in sq ft, 2 decimals),
+    //   usableDeckArea: string (deck area minus pool, in sq ft, 2 decimals),
+    //   railingFootage: string (total perimeter/railing length in ft, 2 decimals),
+    //   fasciaBoardLength: string (fascia board length in ft, 2 decimals),
+    //   warning: string|null (warning message if area is large, else null),
+    //   explanation: string (explanation of area calculation),
+    //   skirting: object|null (skirting estimation details, if requested)
+    // }
     res.json({
       outerDeckArea: outerArea.toFixed(2),
       poolArea: poolArea.toFixed(2),

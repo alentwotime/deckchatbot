@@ -1,4 +1,3 @@
-
 function appendMessage(role, text) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -21,7 +20,7 @@ async function sendMessage() {
     const response = await fetch('/chatbot', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer revamp123secure',
+        'Authorization': `Bearer ${process.env.API_KEY || 'revamp123secure'}`, // Use env var
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ message: userInput })
