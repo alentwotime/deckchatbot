@@ -21,7 +21,7 @@ async function sendMessage() {
       body: JSON.stringify({ message: userInput })
     });
     const data = await response.json();
-    appendMessage('bot', data.response || `Error: ${data.error || 'Unable to get response.'}`);
+    appendMessage('bot', data.response || getBotErrorMessage(data));
   } catch (err) {
     appendMessage('bot', `Error: ${err.message}`);
   }
@@ -44,7 +44,8 @@ async function uploadImage() {
     return;
   }
 
-  console.log('📤 Uploading image:', file.name); // Debug log
+  // Debug log (uncomment for development)
+  // console.log('📤 Uploading image:', file.name);
 
   const formData = new FormData();
   formData.append('image', file); // Must match upload.single('image')
@@ -173,7 +174,9 @@ function calculateDeck() {
   if (shape === 'rectangle') {
     const length = parseFloat(document.getElementById('length').value);
     const width = parseFloat(document.getElementById('width').value);
-    if ([length, width, boardWidth, boardLength].some(isNaN)) return;
+    if ([length, width, boardWidth, boardLength].some(isNaN)) {
+      return;
+    }
     area = length * width;
     dims = { length, width };
   } else if (shape === 'lshape') {
@@ -181,12 +184,16 @@ function calculateDeck() {
     const w1 = parseFloat(document.getElementById('width1').value);
     const l2 = parseFloat(document.getElementById('length2').value);
     const w2 = parseFloat(document.getElementById('width2').value);
-    if ([l1, w1, l2, w2, boardWidth, boardLength].some(isNaN)) return;
+    if ([l1, w1, l2, w2, boardWidth, boardLength].some(isNaN)) {
+      return;
+    }
     area = l1 * w1 + l2 * w2;
     dims = { length1: l1, width1: w1, length2: l2, width2: w2 };
   } else if (shape === 'octagon') {
     const side = parseFloat(document.getElementById('side').value);
-    if ([side, boardWidth, boardLength].some(isNaN)) return;
+    if ([side, boardWidth, boardLength].some(isNaN)) {
+      return;
+    }
     area = 2 * (1 + Math.SQRT2) * Math.pow(side, 2);
     dims = { side };
   }
@@ -216,14 +223,14 @@ function calculateDeck() {
   }
   results.innerHTML = html;
 
-  drawDeck(shape, dims, boardWidth, orientation, document.getElementById('showBoards').checked);
+  const showBoardsEl = document.getElementById('showBoards');
+  const showBoards = showBoardsEl ? showBoardsEl.checked : false;
+  drawDeck(shape, dims, boardWidth, orientation, showBoards);
 }
 
 function drawDeck(shape, dims, boardWidth, orientation, showBoards) {
   const canvas = document.getElementById('deckCanvas');
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   let width, length;
   if (shape === 'rectangle') {
     ({ width, length } = dims);
@@ -232,6 +239,16 @@ function drawDeck(shape, dims, boardWidth, orientation, showBoards) {
     length = dims.length1 + dims.width2;
   } else if (shape === 'octagon') {
     width = length = dims.side * (1 + Math.SQRT2);
+  }
+
+  // Validate width and length before proceeding
+  if (
+    typeof width !== 'number' || typeof length !== 'number' ||
+    isNaN(width) || isNaN(length) ||
+    width <= 0 || length <= 0
+  ) {
+    // Optionally, you could clear the canvas or show an error here
+    return;
   }
 
   const scale = Math.min(canvas.width / width, canvas.height / length);
@@ -247,7 +264,9 @@ function drawDeck(shape, dims, boardWidth, orientation, showBoards) {
     ctx.fillRect(offX, offY, w, l);
     ctx.strokeRect(offX, offY, w, l);
     drawDims(ctx, offX, offY, w, l, width, length);
-    if (showBoards) drawBoards(ctx, offX, offY, w, l, boardWidth, orientation, scale);
+    if (showBoards) {
+      drawBoards(ctx, offX, offY, w, l, boardWidth, orientation, scale);
+    }
   } else if (shape === 'lshape') {
     const r1 = { w: dims.width1 * scale, l: dims.length1 * scale };
     const r2 = { w: dims.length2 * scale, l: dims.width2 * scale };
@@ -278,37 +297,34 @@ function drawDeck(shape, dims, boardWidth, orientation, showBoards) {
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
     drawDims(ctx, offX, offY, width * scale, length * scale, width, length);
-    if (showBoards) drawBoards(ctx, offX, offY, width * scale, length * scale, boardWidth, orientation, scale);
+    if (showBoards) {
+      drawBoards(ctx, offX, offY, width * scale, length * scale, boardWidth, orientation, scale);
+    }
+    drawDims(ctx, offX, offY, width * scale, length * scale, width, length);
+    if (showBoards) {
+      drawBoards(ctx, offX, offY, width * scale, length * scale, boardWidth, orientation, scale);
+    }
   }
 }
 
 function drawDims(ctx, x, y, w, l, widthFt, lengthFt) {
   ctx.fillStyle = '#000';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`${lengthFt} ft`, x + w / 2, y - 5);
-  ctx.save();
-  ctx.translate(x - 5, y + l / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(`${widthFt} ft`, 0, 0);
-  ctx.restore();
+  // TODO: draw dimension lines and labels, e.g. using ctx.fillText
 }
 
 function drawBoards(ctx, x, y, w, l, boardWidth, orientation, scale) {
   ctx.strokeStyle = '#666';
-  const gap = (boardWidth / 12) * scale;
+  const boardWidthPx = (boardWidth / 12) * scale;
   if (orientation === 'horizontal') {
-    for (let yp = y + gap; yp < y + l; yp += gap) {
+    for (let yp = y + boardWidthPx; yp < y + l; yp += boardWidthPx) {
       ctx.beginPath();
       ctx.moveTo(x, yp);
       ctx.lineTo(x + w, yp);
       ctx.stroke();
     }
   } else {
-    for (let xp = x + gap; xp < x + w; xp += gap) {
+    for (let xp = x + boardWidthPx; xp < x + w; xp += boardWidthPx) {
       ctx.beginPath();
       ctx.moveTo(xp, y);
       ctx.lineTo(xp, y + l);
@@ -333,7 +349,7 @@ function estimateStructure(shape, dims, orientation, attachment, height, railing
 
   const beamSpacing = 8; // ft span
   const beams = Math.max(2, Math.ceil((orientation === 'horizontal' ? length : width) / beamSpacing) + 1);
-  const posts = beams * Math.ceil((orientation === 'horizontal' ? length : width) / beamSpacing + 1);
+  const posts = beams * (Math.ceil((orientation === 'horizontal' ? length : width) / beamSpacing) + 1);
 
   let perimeter = 0;
   if (shape === 'rectangle') {
@@ -356,7 +372,10 @@ function estimateStructure(shape, dims, orientation, attachment, height, railing
   } else {
     perimeter = 8 * dims.side;
   }
-  if (attachment === 'attached') perimeter -= width; // approximate
+  if (attachment === 'attached') {
+    perimeter -= width; // approximate
+    perimeter = Math.max(0, perimeter);
+  }
 
   const railingPosts = railings ? Math.ceil(perimeter / 6) + 1 : 0;
 

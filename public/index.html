@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decking Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #111; color: #fff; margin: 0; padding: 2rem; }
+    .chat-container { max-width: 600px; margin: auto; background: #222; border-radius: 8px; padding: 1rem; box-shadow: 0 0 10px #000; }
+    .message-box, .upload-section { margin-top: 1rem; }
+    .preview { margin-top: 1rem; text-align: center; }
+    .preview img { max-width: 100%; border-radius: 8px; display: none; }
+    .spinner { display: none; border: 4px solid #444; border-top: 4px solid #0f0; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: auto; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .results { margin-top: 1rem; padding: 1rem; background: #333; border-radius: 6px; display: none; }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h2>Decking Chatbot</h2>
+
+    <div class="upload-section">
+      <label for="drawingUpload">Select deck drawing to upload:</label><br />
+      <input type="file" id="drawingUpload" name="drawingUpload" accept="image/*" title="Upload a deck drawing" />
+      <button onclick="uploadImage()">Upload</button>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+
+    <div class="preview">
+      <img id="previewImg" src="" alt="Uploaded Drawing Preview" />
+    </div>
+
+    <div class="results" id="results">
+      <strong>Surface Area:</strong> <span id="area">--</span> sq ft<br />
+      <strong>Fascia Needed:</strong> <span id="fascia">--</span> linear ft<br />
+      <strong>Steps:</strong> <span id="steps">--</span><br />
+      <strong>Railing:</strong> <span id="railing">--</span> linear ft
+    </div>
+  </div>
+
+  <script>
+    async function uploadImage() {
+      const fileInput = document.getElementById('drawingUpload');
+      const spinner = document.getElementById('spinner');
+      const previewImg = document.getElementById('previewImg');
+      const resultsBox = document.getElementById('results');
+
+      if (!fileInput.files.length) return alert("Please select a file");
+
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+
+      spinner.style.display = 'block';
+      previewImg.style.display = 'none';
+      resultsBox.style.display = 'none';
+
+      try {
+        const response = await fetch('/upload-drawing', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        spinner.style.display = 'none';
+
+        if (data.error) return alert("Upload failed: " + data.error);
+
+        previewImg.src = `/uploads/${data.filename}`;
+        previewImg.style.display = 'block';
+
+        document.getElementById('area').textContent = data.squareFootage;
+        document.getElementById('fascia').textContent = data.fascia;
+        document.getElementById('steps').textContent = data.steps;
+        document.getElementById('railing').textContent = data.railing;
+        resultsBox.style.display = 'block';
+
+        alert("✅ Drawing uploaded and analyzed successfully!");
+
+      } catch (err) {
+        spinner.style.display = 'none';
+        alert("❌ Upload error: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

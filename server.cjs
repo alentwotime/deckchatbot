@@ -13,7 +13,7 @@ require('./utils/db');
 const chatbotRoutes = require('./routes/chatbot');
 const digitalizeController = require('./controllers/digitalizeController');
 const measurementRoutes = require('./routes/measurements');
-const shapeController = require('./controllers/shapeController'); // ✅ NEW
+const shapeController = require('./controllers/shapeController');
 const uploadDrawingRoutes = require('./routes/uploadDrawing');
 const deckCalcRoutes = require('./routes/deckCalc');
 const skirtingRoutes = require('./routes/skirting');
@@ -29,48 +29,43 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('dev'));
 
-// Routes (no /api prefix to match frontend)
+// API Routes
 app.use('/chatbot', chatbotRoutes);
-
-app.post(
-  '/digitalize-drawing',
-  upload.single('image'),
-  digitalizeController.digitalizeDrawing
-);
-
-// Upload routes
+app.post('/digitalize-drawing', upload.single('image'), digitalizeController.digitalizeDrawing);
 app.use('/upload-drawing', upload.single('image'), uploadDrawingRoutes);
-
 app.use('/upload-measurements', measurementRoutes);
-
-// ✅ NEW: handle shape area calculations
-app.post(
-  '/calculate-multi-shape',
-  shapeController.calculateMultiShape
-);
-
+app.post('/calculate-multi-shape', shapeController.calculateMultiShape);
 app.use('/calculate-deck', deckCalcRoutes);
 app.use('/calculate-skirting', skirtingRoutes);
 
-// Serve frontend files and uploads
-app.use(express.static(path.join(__dirname)));
+// Static File Serving (Frontend)
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// 404 handler
+// Optional: fallback to index.html for client-side routing
+app.get('*', (req, res, next) => {
+  if (req.accepts('html')) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    next();
+  }
+});
+
+// 404 Handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler
+// Error Handler
 app.use((err, req, res, next) => {
   logger.error(err.stack);
   res.status(500).json({ error: 'Something went wrong' });
 });
 
-// Export for index.js (clustered start)
+// Export for cluster usage
 module.exports = { app, logger };
 
-// Allow running `node server.cjs` directly for a single-process server
+// Allow direct server startup
 if (require.main === module) {
   const config = require('./config');
   const PORT = config.PORT || 3000;
@@ -78,3 +73,4 @@ if (require.main === module) {
     logger.info(`✅ Server running at http://localhost:${PORT}`);
   });
 }
+console.log('💡 Static middleware initialized');
