@@ -96,55 +96,6 @@
     <div id="progressBar"></div>
     <img id="preview" />
 
- HEAD
-    <div class="preview">
-      <img id="previewImg" src="" alt="Uploaded Drawing Preview" />
-    </div>
-
-    <div class="results" id="results">
-      <strong>Uploaded File:</strong>
-      <a id="fileLink" href="#" target="_blank">View</a>
-    </div>
-  </div>
-
-  <script>
-    async function uploadImage() {
-      const fileInput = document.getElementById('drawingUpload');
-      const spinner = document.getElementById('spinner');
-      const previewImg = document.getElementById('previewImg');
-      const resultsBox = document.getElementById('results');
-
-      if (!fileInput.files.length) return alert("Please select a file");
-
-      const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
-
-      spinner.style.display = 'block';
-      previewImg.style.display = 'none';
-      resultsBox.style.display = 'none';
-
-      try {
-        const response = await fetch('/upload-drawing', { method: 'POST', body: formData });
-        const data = await response.json();
-
-        spinner.style.display = 'none';
-
-        if (data.error) return alert("Upload failed: " + data.error);
-
-        previewImg.src = data.filePath;
-        previewImg.style.display = 'block';
-        document.getElementById('fileLink').href = data.filePath;
-        resultsBox.style.display = 'block';
-
-        alert("✅ Drawing uploaded successfully!");
-
-      } catch (err) {
-        spinner.style.display = 'none';
-        alert("❌ Upload error: " + err.message);
-      }
-    }
-  </script>
-=======
     <div class="chatbox" id="messages"></div>
     <form id="chatForm">
       <input type="text" id="userInput" placeholder="Ask the bot a question..." />
@@ -152,6 +103,5 @@
   </div>
 
   <script src="/script.js"></script>
- 3af863c (save local changes before rebase)
 </body>
 </html>

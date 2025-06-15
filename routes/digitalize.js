@@ -17,6 +17,6 @@ const validateImage = [
 ];
 
 // POST /digitalize-drawing
-router.post('/', upload.single('image'), validateImage, digitalizeDrawing);
+router.post('/', upload.single('image'), digitalizeDrawing);
 
 module.exports = router;
