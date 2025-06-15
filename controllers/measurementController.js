@@ -33,10 +33,7 @@ async function uploadMeasurements(req, res) {
     });
 
     const numbers = extractNumbers(text);
-    logger.info(`🔢 Extracted numbers: ${numbers.join(', ')}`);
-
- feature/drawing-upload-v2
-=======
+  logger.info(`🔢 Extracted numbers: ${numbers.join(', ')}`);
     // If image mentions skirting, run the skirting estimator
     if (/skirting/i.test(text)) {
       const tokens = text.replace(/[’,]/g, "'").split(/\s+/);
@@ -71,8 +68,7 @@ async function uploadMeasurements(req, res) {
       }
     }
 
-    // ✅ 2. Consistent error format for test expectations
- main
+  // ✅ 2. Consistent error format for test expectations
     if (numbers.length < 6) {
       return res.status(400).json({
         errors: [{
@@ -111,8 +107,7 @@ async function uploadMeasurements(req, res) {
       hasMultipleShapes: poolArea > 0
     });
 
- feature/drawing-upload-v2
-    // ✅ SKIRTING LOGIC START
+  // ✅ SKIRTING LOGIC START
     const includeSkirting = /skirt|skirting/i.test(text);
     let skirting = null;
 
@@ -143,8 +138,7 @@ async function uploadMeasurements(req, res) {
         tip: 'Add 1–2 extra panels to cover waste and trimming.'
       };
     }
-    // ✅ SKIRTING LOGIC END
-=======
+  // ✅ SKIRTING LOGIC END
     memory.addMeasurement({
       numbers,
       outerDeckArea: outerArea,
@@ -153,7 +147,6 @@ async function uploadMeasurements(req, res) {
       railingFootage,
       fasciaBoardLength
     });
- main
 
     res.json({
       outerDeckArea: outerArea.toFixed(2),

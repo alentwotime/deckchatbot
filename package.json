@@ -2,17 +2,13 @@
   "name": "decking-chatbot",
   "version": "1.0.0",
   "description": "Decking Sales Chatbot Server",
-  "main": "server.cjs",
+  "main": "index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon server.cjs",
- feature/drawing-upload-v2
-    "test": "jest"
-=======
     "test": "jest",
     "backup": "node scripts/backupMeasurements.js"
- main
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
