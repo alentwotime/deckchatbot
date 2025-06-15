@@ -1,7 +1,5 @@
 #!/bin/bash
+echo "Setting up Deck Chatbot..."
 npm install
-echo "Running setup script..."
-python -m venv venv
-source venv/bin/activate
-pip install flask openai
+echo "Setup complete!"
 

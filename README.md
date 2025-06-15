@@ -1,39 +1,147 @@
 # Deck Chatbot
 
-This project provides a simple Express server with a chatbot interface for deck sales and quoting automation. It includes endpoints for calculating deck measurements and uploading images.
+A comprehensive Node.js application for deck planning and calculation with AI-powered chat capabilities.
 
-## Setup
-1. Install dependencies:
+## Features
+
+- **AI-Powered Chatbot**: Integration with OpenAI GPT for intelligent deck planning conversations
+- **Deck Calculator**: Calculate materials needed for various deck shapes (rectangle, circle, triangle)
+- **Image Analysis**: Upload and analyze deck drawings and images
+- **Multi-Shape Support**: Handle complex deck designs with multiple geometric shapes
+- **Real-time Chat**: Interactive web interface for seamless user experience
+- **File Upload**: Support for image uploads and drawing digitalization
+- **Database Storage**: SQLite database for storing conversations and measurements
+- **Rate Limiting**: Built-in API rate limiting for security
+- **Logging**: Comprehensive logging with Winston
+- **Clustering**: Multi-process support for better performance
+
+## Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd deckchatbot
+   ```
+
+2. Install dependencies:
+
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`.
-   You can also set `MEM_DB` to choose a custom path for the SQLite database.
-3. Start the server:
+
+3. Set up environment variables:
+
    ```bash
-   npm start
+   cp .env.example .env
+   # Edit .env with your OpenAI API key and other configurations
    ```
 
-The app will be available at `http://localhost:3000` or the port specified by `PORT`.
+4. Run setup script:
 
-## Running Tests
-Run the test suite with:
+   ```bash
+   npm run setup
+   ```
+
+## Configuration
+
+Create a `.env` file with the following variables:
+
+```properties
+OPENAI_API_KEY=your_openai_api_key_here
+API_KEY=your_api_key_here
+NODE_ENV=development
+PORT=3000
+MEM_DB=
+LOG_LEVEL=info
+```
+
+## Usage
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Production
+
+```bash
+npm start
+```
+
+### Testing
+
 ```bash
 npm test
 ```
-## Backup
-Run `npm run backup` to export saved measurements to measurement_backup.json.
 
-## Documentation
+## API Endpoints
 
-- [Master Prompt](docs/MASTER_PROMPT.md)
-- [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
-- [File Upload Troubleshooting](docs/FILE_UPLOAD_TROUBLESHOOTING.md)
-- [Setup Troubleshooting](docs/SETUP_TROUBLESHOOTING.md)
-## API
-- **API:** `POST /calculate-skirting` – estimate skirting materials using feet/inch measurements
-- Uploads mentioning "skirting" auto-return perimeter and panel estimates
+### Chat
 
-### Direct start
-Running `node server.cjs` starts a single-process server if you prefer not to use the cluster entry point.
+- `POST /chatbot` - Send message to AI chatbot
+- Headers: `Authorization: Bearer <API_KEY>`
+- Body: `{"message": "your message here"}`
 
+### Calculations
+
+- `POST /calculate-deck-materials` - Calculate materials for single deck
+- `POST /calculate-multi-shape` - Calculate for multiple geometric shapes
+
+### File Upload
+
+- `POST /upload-image` - Upload general images
+- `POST /digitalize-drawing` - Upload and process deck drawings
+
+### Health Check
+
+- `GET /health` - Application health status
+
+## Project Structure
+
+deckchatbot/
+├── controllers/          # Request handlers
+├── middleware/          # Express middleware
+├── routes/             # API routes
+├── services/           # External service integrations
+├── utils/              # Utility functions
+├── public/             # Static files
+├── uploads/            # File uploads
+├── logs/               # Application logs
+├── scripts/            # Utility scripts
+└── tests/              # Test files
+
+## Architecture
+
+- **Backend**: Node.js with Express.js framework
+- **Database**: SQLite with better-sqlite3
+- **AI Integration**: OpenAI GPT API
+- **Frontend**: Vanilla JavaScript with Bootstrap
+- **Logging**: Winston with daily rotation
+- **Security**: Helmet, CORS, rate limiting
+
+## Security Features
+
+- API key authentication
+- Rate limiting
+- Input validation
+- File type restrictions
+- Error handling and logging
+- CORS configuration
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions, please open an issue in the repository.

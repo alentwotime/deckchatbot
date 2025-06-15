@@ -32,18 +32,12 @@ CREATE TABLE IF NOT EXISTS measurements (
  * @param {any} data - The measurement data to store (will be stringified as JSON).
  */
 function addMeasurement(data) {
-  const stmt = db.prepare('INSERT INTO measurements (data, timestamp) VALUES (?, ?)');
-  let jsonData;
   try {
-    jsonData = JSON.stringify(data);
+    const stmt = db.prepare('INSERT INTO measurements (data, timestamp) VALUES (?, ?)');
+    stmt.run(JSON.stringify(data), Date.now());
   } catch (err) {
-    console.error('Failed to stringify measurement data:', err);
-    return;
-  }
-  try {
-    stmt.run(jsonData, Date.now());
-  } catch (err) {
-    console.error('Failed to insert measurement:', err);
+    console.error('Error adding measurement to database:', err);
+    throw err;
   }
 }
 
@@ -52,26 +46,30 @@ function addMeasurement(data) {
  * @returns {({id: number, data: any, timestamp: number})[]}
  */
 function getAllMeasurements() {
-  const stmt = db.prepare('SELECT id, data, timestamp FROM measurements ORDER BY id');
-  const rows = stmt.all();
-  return rows.map(r => {
-    let parsedData;
-    try {
-      parsedData = JSON.parse(r.data);
-    } catch (e) {
-      parsedData = null; // or you can set to r.data or handle as needed
-      console.warn(`Failed to parse measurement data for id ${r.id}:`, e.message);
-    }
-    return { id: r.id, data: parsedData, timestamp: r.timestamp };
-  });
+  try {
+    const stmt = db.prepare('SELECT * FROM measurements ORDER BY timestamp DESC');
+    const rows = stmt.all();
+    return rows.map(row => ({
+      ...row,
+      data: JSON.parse(row.data)
+    }));
+  } catch (err) {
+    console.error('Error retrieving measurements:', err);
+    return [];
+  }
 }
 
 /**
  * Clears all messages and measurements from the database.
  */
 function clearMemory() {
-  db.exec('DELETE FROM messages;');
-  db.exec('DELETE FROM measurements;');
+  try {
+    db.prepare('DELETE FROM messages').run();
+    db.prepare('DELETE FROM measurements').run();
+  } catch (err) {
+    console.error('Error clearing memory:', err);
+    throw err;
+  }
 }
 
 /**
@@ -80,25 +78,13 @@ function clearMemory() {
  * @returns {Array<{id: number, role: string, content: string, timestamp: number}>}
  */
 function getRecentMessages(limit = 10) {
-  // Ensure limit is a positive integer
-  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit <= 0) {
-    limit = 10;
+  try {
+    const stmt = db.prepare('SELECT * FROM messages ORDER BY timestamp DESC LIMIT ?');
+    return stmt.all(limit);
+  } catch (err) {
+    console.error('Error retrieving recent messages:', err);
+    return [];
   }
-  const stmt = db.prepare('SELECT id, role, content, timestamp FROM messages ORDER BY id DESC LIMIT ?');
-  return stmt.all(limit).reverse();
-}
-
-/**
- * Adds a message to the database.
- * @param {string} role - The role of the message sender.
- * @param {string} content - The message content.
- */
-function addMessage(role, content) {
-  if (typeof role !== 'string' || typeof content !== 'string' || !role.trim() || !content.trim()) {
-    throw new Error('Both role and content must be non-empty strings.');
-  }
-  const stmt = db.prepare('INSERT INTO messages (role, content, timestamp) VALUES (?, ?, ?)');
-  stmt.run(role, content, Date.now());
 }
 
 /**
@@ -106,12 +92,14 @@ function addMessage(role, content) {
  * @param {string} filePath - The path to the temporary file to delete.
  */
 function cleanTempFile(filePath) {
-  const fs = require('fs');
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      console.error(`Failed to delete temp file ${filePath}:`, err.message);
+  try {
+    const fs = require('fs');
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
-  });
+  } catch (err) {
+    console.error('Error cleaning temp file:', err);
+  }
 }
 
 module.exports = {

@@ -1,181 +1,136 @@
 const Tesseract = require('tesseract.js');
-const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../utils/geometry');
-const { extractNumbers, parseMeasurement } = require('../utils/extract');
-const { calculateSkirtingMetrics, ftIn } = require('../utils/skirting');
+const { addMeasurement } = require('../memory');
+const { polygonArea, calculatePerimeter, ftInToDecimal } = require('../utils/geometry');
 const logger = require('../utils/logger');
-const memory = require('../memory');
 
-// Converts feet + inches to decimal
-function ftInToDecimal(feet = 0, inches = 0) {
-  return parseFloat(feet) + parseFloat(inches || 0) / 12;
-}
-
+/**
+ * Extract measurements from uploaded images using OCR
+ */
 async function uploadMeasurements(req, res) {
   try {
-    logger.info('🟡 Upload request received.');
-
     if (!req.file) {
-      logger.warn('⚠️ No image file received in upload.');
       return res.status(400).json({
-        errors: [{ msg: 'Image file is required' }]
+        errors: [{ msg: 'No image file uploaded. Please attach an image.' }]
       });
     }
 
-    logger.info(`📸 Processing image: ${req.file.originalname || 'buffer upload'}`);
-
-    const {
-      data: { text }
-    } = await Tesseract.recognize(req.file.buffer, 'eng', {
-      tessedit_pageseg_mode: 6,
-      // Allow foot (') and inch (") symbols in OCR results
-      tessedit_char_whitelist: "0123456789.'\"",
-      logger: info => logger.debug(info)
+    logger.info('Processing measurement image', {
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
     });
 
-    const numbers = extractNumbers(text);
-  logger.info(`🔢 Extracted numbers: ${numbers.join(', ')}`);
-    // If image mentions skirting, run the skirting estimator
-    if (/skirting/i.test(text)) {
-      const tokens = text.replace(/[’,]/g, "'").split(/\s+/);
-      const idx = tokens.findIndex(t => /skirting/i.test(t));
-      const vals = [];
-      for (let i = idx + 1; i < tokens.length && vals.length < 3; i++) {
-        const v = parseMeasurement(tokens[i]);
-        if (typeof v === 'number' && !Number.isNaN(v)) {
-          vals.push(v);
-        }
-      }
-      if (vals.length >= 3) {
-        const material = /PVC/i.test(text)
-          ? 'PVC'
-          : /Mineral\s*Board/i.test(text) || /Mineral/i.test(text)
-            ? 'Mineral Board'
-            : 'Composite';
-        const result = calculateSkirtingMetrics({
-          length: vals[0],
-          width: vals[1],
-          height: vals[2],
-          material
-        });
-        return res.json({
-          perimeter: ftIn(result.perimeter),
-          skirtingArea: result.skirtingArea.toFixed(2),
-          panelsNeeded: result.panelsNeeded,
-          material: result.material,
-          tip: result.tip,
-          note: result.note
-        });
-      }
-    }
+    // Perform OCR on the uploaded image
+    const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'eng', {
+      logger: m => logger.debug('OCR progress:', m)
+    });
 
-  // ✅ 2. Consistent error format for test expectations
-    if (numbers.length < 6) {
+    logger.debug('OCR text extracted:', { text });
+
+    // Extract numbers from the OCR text
+    const numberMatches = text.match(/\d+(?:\.\d+)?/g) || [];
+    const numbers = numberMatches
+      .map(n => parseFloat(n))
+      .filter(n => !isNaN(n) && n > 0 && n <= 500); // Filter reasonable measurements
+
+    if (numbers.length < 4) {
       return res.status(400).json({
-        errors: [{
-          msg: 'Not enough coordinates detected. Please ensure your drawing is clear and numbers are legible.'
-        }]
+        errors: [{ msg: 'Could not extract enough measurements from the image. Please ensure the drawing has clear dimension labels.' }]
       });
     }
 
-    const hasPool = /pool/i.test(text);
+    logger.info('Numbers extracted from image:', { numbers });
+
+    // Determine if this includes a pool cutout
+    const hasPool = /pool|cutout|spa|hot tub/i.test(text);
     const midpoint = hasPool ? Math.floor(numbers.length / 2) : numbers.length;
 
+    // Create coordinate points for the main deck area
     const outerPoints = [];
     for (let i = 0; i < midpoint; i += 2) {
-      outerPoints.push({ x: numbers[i], y: numbers[i + 1] });
-    }
-
-    const poolPoints = [];
-    if (hasPool) {
-      for (let i = midpoint; i < numbers.length; i += 2) {
-        poolPoints.push({ x: numbers[i], y: numbers[i + 1] });
+      if (i + 1 < midpoint) {
+        outerPoints.push({
+          x: numbers[i],
+          y: numbers[i + 1]
+        });
       }
     }
 
-    const outerArea = polygonArea(outerPoints);
-    const poolArea = hasPool ? polygonArea(poolPoints) : 0;
-    const usableDeckArea = outerArea - poolArea;
-    const railingFootage = calculatePerimeter(outerPoints);
-    const fasciaBoardLength = railingFootage;
+    // Calculate deck area
+    let outerDeckArea = 0;
+    let poolArea = 0;
 
-    const warning = usableDeckArea > 1000
-      ? 'Deck area exceeds 1000 sq ft. Please verify measurements.'
-      : null;
+    if (outerPoints.length >= 3) {
+      outerDeckArea = polygonArea(outerPoints);
+    } else if (outerPoints.length === 2) {
+      // Assume rectangle
+      outerDeckArea = outerPoints[0].x * outerPoints[0].y;
+    }
 
-    const explanation = deckAreaExplanation({
-      hasCutout: poolArea > 0,
-      hasMultipleShapes: poolArea > 0
-    });
+    // Handle pool cutout if present
+    if (hasPool && numbers.length > midpoint) {
+      const poolPoints = [];
+      for (let i = midpoint; i < numbers.length; i += 2) {
+        if (i + 1 < numbers.length) {
+          poolPoints.push({
+            x: numbers[i],
+            y: numbers[i + 1]
+          });
+        }
+      }
 
-  // ✅ SKIRTING LOGIC START
-    const includeSkirting = /skirt|skirting/i.test(text);
+      if (poolPoints.length >= 3) {
+        poolArea = polygonArea(poolPoints);
+      } else if (poolPoints.length === 2) {
+        poolArea = poolPoints[0].x * poolPoints[0].y;
+      }
+    }
+
+    const usableDeckArea = outerDeckArea - poolArea;
+    const perimeter = outerPoints.length >= 3 ? calculatePerimeter(outerPoints) : 0;
+
+    // Check for skirting request
+    const needsSkirting = /skirting|skirt|underdeck/i.test(text);
     let skirting = null;
 
-    if (includeSkirting) {
-      const length = numbers[0] || 0;
-      const width = numbers[2] || 0;
-      const height = numbers[4] || 3; // default deck height
-
-      const perimeter = calculatePerimeter(outerPoints); // handles any polygon shape
-      const skirtingHeight = height;
-      const skirtingArea = perimeter * skirtingHeight;
-      const panelsNeeded = Math.ceil(skirtingArea / 32); // 4'x8' = 32 sq ft
-
-      const material = /composite/i.test(text)
-        ? 'Composite'
-        : /pvc/i.test(text)
-          ? 'PVC'
-          : /mineral/i.test(text)
-            ? 'Mineral Board'
-            : 'Composite';
+    if (needsSkirting) {
+      // Extract height information for skirting
+      const heightMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:ft|feet|')/i);
+      const height = heightMatch ? ftInToDecimal(heightMatch[1]) : 3; // Default 3ft
 
       skirting = {
-        perimeterFt: perimeter.toFixed(2),
-        heightFt: skirtingHeight.toFixed(2),
-        skirtingArea: skirtingArea.toFixed(2),
-        estimatedPanels: panelsNeeded,
-        material,
-        tip: 'Add 1–2 extra panels to cover waste and trimming.'
+        perimeter: perimeter.toFixed(2),
+        height: height.toFixed(2),
+        panelsNeeded: Math.ceil(perimeter / 8), // Assuming 8ft panels
+        linearFeet: perimeter.toFixed(2)
       };
     }
-  // ✅ SKIRTING LOGIC END
-    memory.addMeasurement({
-      numbers,
-      outerDeckArea: outerArea,
-      poolArea,
-      usableDeckArea,
-      railingFootage,
-      fasciaBoardLength
-    });
 
-    // Response JSON structure:
-    // {
-    //   outerDeckArea: string (total area of the outer deck in sq ft, 2 decimals),
-    //   poolArea: string (area of pool cutout in sq ft, 2 decimals),
-    //   usableDeckArea: string (deck area minus pool, in sq ft, 2 decimals),
-    //   railingFootage: string (total perimeter/railing length in ft, 2 decimals),
-    //   fasciaBoardLength: string (fascia board length in ft, 2 decimals),
-    //   warning: string|null (warning message if area is large, else null),
-    //   explanation: string (explanation of area calculation),
-    //   skirting: object|null (skirting estimation details, if requested)
-    // }
-    res.json({
-      outerDeckArea: outerArea.toFixed(2),
+    const result = {
+      outerDeckArea: outerDeckArea.toFixed(2),
       poolArea: poolArea.toFixed(2),
       usableDeckArea: usableDeckArea.toFixed(2),
-      railingFootage: railingFootage.toFixed(2),
-      fasciaBoardLength: fasciaBoardLength.toFixed(2),
-      warning,
-      explanation,
-      ...(skirting && { skirting })
-    });
+      railingFootage: perimeter.toFixed(2),
+      fasciaBoardLength: perimeter.toFixed(2),
+      warning: usableDeckArea > 1000 ? 'Large deck area detected. Please verify measurements.' : null,
+      explanation: `Calculated from ${outerPoints.length} points. ${hasPool ? 'Pool area subtracted.' : ''}`,
+      skirting
+    };
 
-  } catch (err) {
-    logger.error(`❌ Error in uploadMeasurements: ${err.stack}`);
+    // Save to memory
+    addMeasurement(result);
+
+    logger.info('Measurement extraction completed', result);
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Error processing measurements:', error);
     res.status(500).json({
-      errors: [{ msg: 'Error processing image.' }]
+      errors: [{ msg: 'Error processing image. Please try again with a clearer image.' }]
     });
   }
 }
 
-module.exports = { uploadMeasurements };
+module.exports = {
+  uploadMeasurements
+};

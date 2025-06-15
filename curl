@@ -1,3 +1,17 @@
+#!/bin/bash
+# Test API endpoint for multi-shape calculation
+
 curl -X POST http://localhost:3000/calculate-multi-shape \
   -H "Content-Type: application/json" \
-  -d '{"shapes":[{"type":"rectangle","dimensions":{"length":12,"width":10}}]}'
+  -H "Authorization: Bearer revamp123secure" \
+  -d '{
+    "shapes": [
+      {
+        "type": "rectangle",
+        "dimensions": {
+          "length": 12,
+          "width": 10
+        }
+      }
+    ]
+  }'
