@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const Jimp = require('jimp');
+const sharp = require('sharp');
 const potrace = require('potrace');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
@@ -18,17 +18,12 @@ async function digitalizeDrawing(req, res) {
       return res.status(400).json({ error: 'Please upload an image' });
     }
 
-    const img = await Jimp.read(req.file.buffer);
-    img.greyscale().contrast(1).normalize().threshold({ max: 200 });
-
-    const buffer = await new Promise((resolve, reject) => {
-      img.getBuffer('image/png', (err, buf) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(buf);
-      });
-    });
+    const buffer = await sharp(req.file.buffer)
+      .greyscale()
+      .normalise()
+      .threshold(200)
+      .png()
+      .toBuffer();
 
     const tmpPath = path.join(os.tmpdir(), `drawing-${Date.now()}.png`);
     await fs.promises.writeFile(tmpPath, buffer);
