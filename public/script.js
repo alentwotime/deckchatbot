@@ -50,6 +50,7 @@ function handleUpload(file) {
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/upload-drawing', true);
+  xhr.setRequestHeader('Authorization', 'Bearer revamp123secure');
 
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {

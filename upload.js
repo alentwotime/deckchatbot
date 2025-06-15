@@ -41,7 +41,11 @@ document.getElementById('uploadButton').addEventListener('click', async () => {
 
   spinner.classList.remove('d-none');
   try {
-    const res = await fetch('/upload-drawing', { method: 'POST', body: formData });
+    const res = await fetch('/upload-drawing', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer revamp123secure' },
+      body: formData
+    });
     const data = await res.json();
     spinner.classList.add('d-none');
     if (res.ok) {
