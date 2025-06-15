@@ -27,6 +27,12 @@ function addMeasurement(data) {
   stmt.run(JSON.stringify(data), Date.now());
 }
 
+function getAllMeasurements() {
+  const stmt = db.prepare('SELECT id, data, timestamp FROM measurements ORDER BY id');
+  const rows = stmt.all();
+  return rows.map(r => ({ id: r.id, data: JSON.parse(r.data), timestamp: r.timestamp }));
+}
+
 function getRecentMessages(limit = 10) {
   const stmt = db.prepare('SELECT role, content, timestamp FROM messages ORDER BY id DESC LIMIT ?');
   const rows = stmt.all(limit);
@@ -37,4 +43,10 @@ function clearMemory() {
   db.exec('DELETE FROM messages; DELETE FROM measurements;');
 }
 
-module.exports = { addMessage, addMeasurement, getRecentMessages, clearMemory };
+module.exports = {
+  addMessage,
+  addMeasurement,
+  getRecentMessages,
+  getAllMeasurements,
+  clearMemory
+};

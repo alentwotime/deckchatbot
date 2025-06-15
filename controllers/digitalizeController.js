@@ -14,6 +14,10 @@ async function digitalizeDrawing(req, res) {
       return res.status(400).json({ errors: errors.array() });
     }
 
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload an image' });
+    }
+
     const img = await Jimp.read(req.file.buffer);
     img.greyscale().contrast(1).normalize().threshold({ max: 200 });
 
@@ -44,9 +48,9 @@ async function digitalizeDrawing(req, res) {
   } catch (err) {
     logger.error(err.stack);
     if (err.message === 'digitalize') {
-      res.status(500).json({ error: 'Error digitalizing drawing.' });
+      res.status(500).json({ errors: [{ msg: 'Error digitalizing drawing.' }] });
     } else {
-      res.status(500).json({ error: 'Error processing drawing.' });
+      res.status(500).json({ errors: [{ msg: 'Error processing drawing.' }] });
     }
   }
 }

@@ -20,3 +20,15 @@ Run the test suite with:
 ```bash
 npm test
 ```
+## Backup
+Run `npm run backup` to export saved measurements to measurement_backup.json.
+
+## Documentation
+
+- [Master Prompt](docs/MASTER_PROMPT.md)
+- [Measurement Extraction Logic](docs/MEASUREMENT_EXTRACTION.md)
+- [File Upload Troubleshooting](docs/FILE_UPLOAD_TROUBLESHOOTING.md)
+## API
+- **API:** `POST /calculate-skirting` – estimate skirting materials using feet/inch measurements
+- Uploads mentioning "skirting" auto-return perimeter and panel estimates
+

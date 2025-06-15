@@ -1,7 +1,9 @@
 const Tesseract = require('tesseract.js');
 const { polygonArea, calculatePerimeter, deckAreaExplanation } = require('../utils/geometry');
-const { extractNumbers } = require('../utils/extract');
+const { extractNumbers, parseMeasurement } = require('../utils/extract');
+const { calculateSkirtingMetrics, ftIn } = require('../utils/skirting');
 const logger = require('../utils/logger');
+const memory = require('../memory');
 
 // Converts feet + inches to decimal
 function ftInToDecimal(feet = 0, inches = 0) {
@@ -25,13 +27,52 @@ async function uploadMeasurements(req, res) {
       data: { text }
     } = await Tesseract.recognize(req.file.buffer, 'eng', {
       tessedit_pageseg_mode: 6,
-      tessedit_char_whitelist: '0123456789.',
+      // Allow foot (') and inch (") symbols in OCR results
+      tessedit_char_whitelist: "0123456789.'\"",
       logger: info => logger.debug(info)
     });
 
     const numbers = extractNumbers(text);
     logger.info(`🔢 Extracted numbers: ${numbers.join(', ')}`);
 
+ feature/drawing-upload-v2
+=======
+    // If image mentions skirting, run the skirting estimator
+    if (/skirting/i.test(text)) {
+      const tokens = text.replace(/[’,]/g, "'").split(/\s+/);
+      const idx = tokens.findIndex(t => /skirting/i.test(t));
+      const vals = [];
+      for (let i = idx + 1; i < tokens.length && vals.length < 3; i++) {
+        const v = parseMeasurement(tokens[i]);
+        if (typeof v === 'number' && !Number.isNaN(v)) {
+          vals.push(v);
+        }
+      }
+      if (vals.length >= 3) {
+        const material = /PVC/i.test(text)
+          ? 'PVC'
+          : /Mineral\s*Board/i.test(text) || /Mineral/i.test(text)
+            ? 'Mineral Board'
+            : 'Composite';
+        const result = calculateSkirtingMetrics({
+          length: vals[0],
+          width: vals[1],
+          height: vals[2],
+          material
+        });
+        return res.json({
+          perimeter: ftIn(result.perimeter),
+          skirtingArea: result.skirtingArea.toFixed(2),
+          panelsNeeded: result.panelsNeeded,
+          material: result.material,
+          tip: result.tip,
+          note: result.note
+        });
+      }
+    }
+
+    // ✅ 2. Consistent error format for test expectations
+ main
     if (numbers.length < 6) {
       return res.status(400).json({
         errors: [{
@@ -70,6 +111,7 @@ async function uploadMeasurements(req, res) {
       hasMultipleShapes: poolArea > 0
     });
 
+ feature/drawing-upload-v2
     // ✅ SKIRTING LOGIC START
     const includeSkirting = /skirt|skirting/i.test(text);
     let skirting = null;
@@ -102,6 +144,16 @@ async function uploadMeasurements(req, res) {
       };
     }
     // ✅ SKIRTING LOGIC END
+=======
+    memory.addMeasurement({
+      numbers,
+      outerDeckArea: outerArea,
+      poolArea,
+      usableDeckArea,
+      railingFootage,
+      fasciaBoardLength
+    });
+ main
 
     res.json({
       outerDeckArea: outerArea.toFixed(2),
