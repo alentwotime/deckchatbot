@@ -23,7 +23,6 @@
     "franc": "^6.2.0",
     "fuse.js": "^7.1.0",
     "helmet": "^8.1.0",
-    "jimp": "^1.6.0",
     "jsonwebtoken": "^9.0.2",
     "mathjs": "^11.8.0",
     "morgan": "^1.10.0",
