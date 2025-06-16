@@ -68,69 +68,9 @@ router.post('/digitalize-drawing', upload.single('drawing'), (req, res) => {
 
   // TODO: Implement drawing digitalization logic
   res.json({
-    message: 'Drawing uploaded successfully',
-    filename: req.file.filename,
-    originalName: req.file.originalname,
-    size: req.file.size,
-    digitalizeResult: {
-      shapes: [],
-      dimensions: {},
-      area: 0
-    }
+    message: 'Drawing digitalized successfully',
+    filename: req.file.filename
   });
-});
-
-// Multi-shape calculator endpoint
-router.post('/calculate-multi-shape', (req, res) => {
-  try {
-    const { shapes } = req.body;
-    
-    if (!shapes || !Array.isArray(shapes)) {
-      return res.status(400).json({
-        error: 'Invalid input',
-        message: 'Shapes array is required'
-      });
-    }
-
-    let totalArea = 0;
-    const calculations = [];
-
-    for (const shape of shapes) {
-      let area = 0;
-      const { type, dimensions } = shape;
-
-      switch (type) {
-        case 'rectangle':
-          area = dimensions.length * dimensions.width;
-          break;
-        case 'circle':
-          area = Math.PI * Math.pow(dimensions.radius, 2);
-          break;
-        case 'triangle':
-          area = 0.5 * dimensions.base * dimensions.height;
-          break;
-        default:
-          continue;
-      }
-
-      totalArea += area;
-      calculations.push({
-        type,
-        dimensions,
-        area: parseFloat(area.toFixed(2))
-      });
-    }
-
-    res.json({
-      totalArea: parseFloat(totalArea.toFixed(2)),
-      calculations
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: 'Calculation error',
-      message: error.message
-    });
-  }
 });
 
 module.exports = router;
