@@ -97,7 +97,7 @@
  * 🧰 Advanced Tools (optional)
  *
  * - If enabled, allow:
- *    → Drawing cleanup via Jimp or sharp
+ *    → Drawing cleanup via sharp
  *    → Auto-outline detection with Potrace
  *    → Math breakdown explanations (from utils/geometry.js)
  *

@@ -10,6 +10,19 @@ jest.mock('openai', () => {
   MockOpenAI.__createMock = createMock;
   return MockOpenAI;
 });
+
+jest.mock('sharp', () => {
+  const mockImage = {
+    greyscale: jest.fn().mockReturnThis(),
+    normalise: jest.fn().mockReturnThis(),
+    threshold: jest.fn().mockReturnThis(),
+    png: jest.fn().mockReturnThis(),
+    toBuffer: jest.fn(() => Promise.resolve(Buffer.from('img')))
+  };
+  const sharpMock = jest.fn(() => mockImage);
+  sharpMock.__mockImage = mockImage;
+  return sharpMock;
+});
 const OpenAI = require('openai');
 const createMock = OpenAI.__createMock;
 const fs = require('fs');

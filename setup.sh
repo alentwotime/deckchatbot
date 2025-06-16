@@ -1,5 +1,5 @@
 #!/bin/bash
+echo "Setting up Deck Chatbot..."
 npm install
-echo "Running setup script..."
-pip install flask openai
+echo "Setup complete!"
 

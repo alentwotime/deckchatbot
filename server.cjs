@@ -1,79 +1,65 @@
+// This file is for CommonJS environments; use './server.js' for ES modules.
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const compression = require('compression');
-const multer = require('multer');
-const path = require('path');
-const logger = require('./utils/logger');
-const config = require('./config');
+const rateLimit = require('express-rate-limit');
 
-// 🔌 Initialize SQLite DB and tables
-require('./utils/db');
-
-const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
-
-// 🌐 Global Middleware
+// Middleware imports
 const auth = require('./middleware/auth');
 const rateLimiter = require('./middleware/rateLimiter');
-const requestLogger = require('./middleware/requestLogger');
 const errorLogger = require('./middleware/errorLogger');
+const requestLogger = require('./middleware/requestLogger');
+const logger = require('./utils/logger');
 
-// 📦 Route-level Controllers (for inline POSTs)
-const shapeController = require('./controllers/shapeController');
-
-// 🛣️ Full Route Index
+// Route imports
 const routes = require('./routes');
 
-// 🌍 Core Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Security & optimization middleware
 app.use(helmet());
 app.use(compression());
-app.use(morgan('dev'));
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 🔐 API Key Auth (enabled globally)
-app.use(auth);
-
-// 🧯 Request Rate Limiting & Logging
-app.use(rateLimiter);
+// Logging
 app.use(requestLogger);
 
-// 🧭 API Routes
-app.use(routes);
-app.post('/calculate-multi-shape', shapeController.calculateMultiShape);
-
-// 🖼️ Static Frontend Files
+// Rate limiting
+app.use(rateLimiter);
+module.exports = app;
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// 🔁 Fallback for client-side routing (SPA support)
-app.get('*', (req, res, next) => {
-  if (req.accepts('html')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    logger.info('📄 Served frontend index.html');
-  } else {
-    next();
-  }
-});
+// Auth middleware for protected routes
+app.use('/api', auth);
 
-// ❌ 404 Handler
-app.use((req, res) => {
+// Mount all routes
+app.use('/', routes);
+
+// Error handling
+app.use(errorLogger);
+
+// 404 handler
+app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// 💥 Global Error Logger
-app.use(errorLogger);
+// Start server
+const server = app.listen(PORT, () => {
+  logger.info(`🚀 Deck Chatbot Server running on http://localhost:${PORT}`);
+});
 
-// 📦 Export for use in index.js (clustering)
-module.exports = { app, logger };
-
-// 🚀 Allow direct run (no cluster)
-if (require.main === module) {
-  const PORT = config.PORT || 3000;
-  app.listen(PORT, () => {
-    logger.info(`✅ Server running at http://localhost:${PORT}`);
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Process terminated');
   });
-}
+});
+
+module.exports = { app, server };

@@ -6,8 +6,28 @@ name: Node.js CI
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**.js'
+      - '**.mjs'
+      - '**.cjs'
+      - '**.ts'
+      - '**.tsx'
+      - '**.jsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '**.js'
+      - '**.mjs'
+      - '**.cjs'
+      - '**.ts'
+      - '**.tsx'
+      - '**.jsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
 
 jobs:
   build:

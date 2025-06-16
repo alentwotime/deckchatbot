@@ -14,16 +14,17 @@ jest.mock('tesseract.js', () => {
   return { recognize: recognizeMock, __recognizeMock: recognizeMock };
 });
 
-jest.mock('jimp', () => {
+jest.mock('sharp', () => {
   const mockImage = {
     greyscale: jest.fn().mockReturnThis(),
-    contrast: jest.fn().mockReturnThis(),
-    normalize: jest.fn().mockReturnThis(),
+    normalise: jest.fn().mockReturnThis(),
     threshold: jest.fn().mockReturnThis(),
-    getBuffer: jest.fn((type, cb) => cb(null, Buffer.from('img')))
+    png: jest.fn().mockReturnThis(),
+    toBuffer: jest.fn(() => Promise.resolve(Buffer.from('img')))
   };
-  const readMock = jest.fn(() => Promise.resolve(mockImage));
-  return { read: readMock, __mockImage: mockImage, __readMock: readMock };
+  const sharpMock = jest.fn(() => mockImage);
+  sharpMock.__mockImage = mockImage;
+  return sharpMock;
 });
 
 jest.mock('potrace', () => ({
@@ -36,9 +37,9 @@ const OpenAI = require('openai');
 const createMock = OpenAI.__createMock;
 const Tesseract = require('tesseract.js');
 const recognizeMock = Tesseract.__recognizeMock;
-const Jimp = require('jimp');
-const readMock = Jimp.__readMock;
-const mockImage = Jimp.__mockImage;
+const sharp = require('sharp');
+const sharpMock = sharp;
+const mockImage = sharp.__mockImage;
 const potrace = require('potrace');
 const memoryDb = path.join(__dirname, 'memory_edge.sqlite');
 process.env.MEM_DB = memoryDb;
@@ -49,8 +50,8 @@ const memory = require('../memory');
 beforeEach(() => {
   memory.clearMemory();
   recognizeMock.mockReset();
-  readMock.mockClear();
-  mockImage.getBuffer.mockClear();
+  sharpMock.mockClear();
+  mockImage.toBuffer.mockClear();
   potrace.trace.mockReset();
 });
 
