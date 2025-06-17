@@ -29,6 +29,11 @@ A comprehensive Node.js application for deck planning and calculation with AI-po
    ```bash
    npm install
    ```
+ codex/update-api-key-in-project
+2. Copy `.env.example` to `.env` and set your `OPENAI_API_KEY` and `API_KEY`.
+   You can also set `MEM_DB` to choose a custom path for the SQLite database.
+3. Start the server:
+=======
 
 3. Set up environment variables:
 
@@ -39,6 +44,7 @@ A comprehensive Node.js application for deck planning and calculation with AI-po
 
 4. Run setup script:
 
+ main
    ```bash
    npm run setup
    ```
